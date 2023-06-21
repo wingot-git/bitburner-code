@@ -7,7 +7,10 @@
 
     "javascript.preferences.importModuleSpecifier": "non-relative",
     "files.exclude": {
-        // "jsconfig.json": true,
-        // "index.d.ts": true,
+        "jsconfig.json": true,
+        "index.d.ts": true,
+        "NetscriptDefinitions.d.ts": true,
+        ".gitignore": true,
+        "LICENSE": true,
     },
 }
