@@ -1,0 +1,13 @@
+{
+    "bitburner.authToken": "7Tp5Hq+Lxe9oei6nMLMgHiwkKXiE+u+HBFRoF0r2EpmvTnSznZlSe8hlcCfYbh0z",
+    "bitburner.scriptRoot": ".",
+    "bitburner.fileWatcher.enable": true,
+    "bitburner.showPushSuccessNotification": true,
+    "bitburner.showFileWatcherEnabledNotification": true,
+
+    "javascript.preferences.importModuleSpecifier": "non-relative",
+    "files.exclude": {
+        // "jsconfig.json": true,
+        // "index.d.ts": true,
+    },
+}
