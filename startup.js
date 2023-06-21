@@ -77,18 +77,20 @@ async function setupLevel(level) {
   let serversOfStrength = getServersOfStrength(level);
   let requiredHacking = NS.getServerRequiredHackingLevel(targetServer);
   
+  let currentHackingLevel = NS.getHackingLevel();
   // Wait until able to hack current target
   while (NS.getHackingLevel() < requiredHacking)
   {
-    NS.print("Too weak for level " + level + " server " + targetServer + ". Current hacking skill: " + NS.getHackingLevel() + ". Required hacking skill: " + requiredHacking + ". Waiting 5 minutes.");
-    await NS.asleep(1000 * 60 * 5);
+    NS.print("Too weak for level " + level + " server " + targetServer + ". Current hacking skill: " + currentHackingLevel + ". Required hacking skill: " + requiredHacking + ". Waiting 5 minutes.");
+    await NS.sleep(1000 * 60 * 5);
+    currentHackingLevel = NS.getHackingLevel
   }
 
   // attempt to stagger 
   for (const server of serversOfStrength) {
     crack(server);
     setupHackScript(server, targetServer);
-    await NS.asleep(12000 * level);
+    await NS.sleep(12000 * level);
   }
 }
 
