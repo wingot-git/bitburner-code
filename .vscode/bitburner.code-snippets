@@ -1,0 +1,12 @@
+{
+	"": {
+		"prefix": "+boiler",
+		"body": [
+		  "/** @param {NS} ns */",
+		  "export async function main(ns) {",
+		  "    ",
+		  "}"
+		],
+		"description": ""
+	  }
+}
