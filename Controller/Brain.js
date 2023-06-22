@@ -119,6 +119,8 @@ async function execute (ns, HGW, server, requiredThreads, target) {
 /** @param {NS} ns */
 export async function main(ns) {
     let target = ns.args[0];
+    // ns.tprint ("Brain server to hack: " + target);
+
     if (target == undefined) { target = "n00dles"; }
     let server = ns.getHostname();
     

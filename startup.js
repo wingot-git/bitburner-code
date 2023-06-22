@@ -130,6 +130,18 @@ async function waitFor(filename) {
   }
 }
 
+function cleanupFiles(ns) {
+  try {
+    ns.rm("hackers-starting-handbook.lit");
+    ns.rm("csec-test.msg");
+    ns.rm("j0.msg");
+    ns.rm("j1.msg");
+    ns.rm("j2.msg");
+    ns.rm("j3.msg");
+    ns.rm("nitesec-test.msg");
+  } catch { }
+}
+
 /** @param {NS} ns */
 export async function main(ns) {
   NS = ns;
@@ -142,6 +154,8 @@ export async function main(ns) {
 
   await waitFor("FTPCrack.exe");
   await setupLevel(2);
+
+  cleanupFiles();
 
   await waitFor("relaySMTP.exe");
   await setupLevel(3);
