@@ -2,7 +2,7 @@
 let NS = 0; // will be used to access NetScript globally
 const lowHackingScript = "oldHack.js";
 const mainHackingScript = "Controller/Brain.js";
-const adjunctHackingScripts = ["hack.js", "grow.js", "weaken.js"];
+const adjunctHackingScripts = ["Cell/share.js", "Cell/hack.js", "Cell/grow.js", "Cell/weaken.js"];
 let skipToLevel = 0;
 
 /** @param {NS} NS */
@@ -78,20 +78,22 @@ function crack(server) {
     return;
   }
 
+  let requiredPorts = NS.getServerNumPortsRequired(server);
+
   // Use minimally invasive programs to crack
-  if (NS.getServerNumPortsRequired(server) == 5) {
+  if (requiredPorts == 5) {
     NS.sqlinject(server);
   } 
-  if (NS.getServerNumPortsRequired(server) >= 4) {
+  if (requiredPorts >= 4) {
     NS.httpworm(server);
   } 
-  if (NS.getServerNumPortsRequired(server) >= 3) {
+  if (requiredPorts >= 3) {
     NS.relaysmtp(server);
   }
-  if (NS.getServerNumPortsRequired(server) >= 2) {
+  if (requiredPorts >= 2) {
     NS.ftpcrack(server);
   } 
-  if (NS.getServerNumPortsRequired(server) >= 1) {
+  if (requiredPorts >= 1) {
     NS.brutessh(server);
   }
   NS.nuke(server);

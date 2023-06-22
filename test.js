@@ -1,4 +1,5 @@
 const mainHackingScript = "Controller/Brain.js";
+const adjunctHackingScripts = ["Cell/share.js", "Cell/hack.js", "Cell/grow.js", "Cell/weaken.js"];
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -12,6 +13,7 @@ export async function main(ns) {
     let serverName = "pserver-" + i;
     ns.killall(serverName);
     ns.scp(mainHackingScript, serverName);
+    ns.scp(adjunctHackingScripts, serverName);
     ns.exec(mainHackingScript, serverName, 1, targetServer)
   }
 }
