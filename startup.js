@@ -1,6 +1,8 @@
 // Global Variables
 let NS = 0; // will be used to access NetScript globally
-const hackingScript = "oldHack.js";
+const lowHackingScript = "oldHack.js";
+const mainHackingScript = "Controller/Brain.js";
+const adjunctHackingScripts = ["hack.js", "grow.js", "weaken.js"];
 
 /** @param {NS} NS */
 function getAllServers() {
@@ -25,14 +27,24 @@ function getServersOfStrength(strength) {
   return servers;
 }
 
+/** @param {NS} NS */
 function setupHackScript (server, targetServer) {
   // Hack targetServer
-  NS.scp(hackingScript, server);
   let mem = NS.getServerMaxRam(server);
-  let maxInstances = Math.floor ((mem / NS.getScriptRam(hackingScript)));
-  if (maxInstances == 0) { return; }
-  NS.print("Server: " + server + " has " + mem + " RAM, and can run " + maxInstances + " instances.");
-  NS.exec(hackingScript, server, maxInstances, targetServer);
+  if (mem < 64) {
+    NS.scp(lowHackingScript, server);
+    let maxInstances = Math.floor ((mem / NS.getScriptRam(lowHackingScript)));
+    if (maxInstances == 0) { return; }
+    NS.print("Server: " + server + " has " + mem + " RAM, and can run " + maxInstances + " instances.");
+    NS.exec(lowHackingScript, server, maxInstances, targetServer);
+  } else {
+    // mem >= 64, deploy Brain
+    NS.print("Server: " + server + " has " + mem + " RAM, and can run Brain.");
+    NS.scp(mainHackingScript, server);
+    NS.scp(adjunctHackingScripts, server);
+    NS.exec(mainHackingScript, targetServer);
+    NS.exec(mainHackingScript, server, 1, targetServer);
+  }
 }
 
 function getRichestServerOfStrength(strength) {
@@ -44,6 +56,19 @@ function getRichestServerOfStrength(strength) {
     }
   }
   return richestServer;
+}
+
+function findEasiestHack(strength) {
+  // Search for easiest Server
+  let easiestServer = "fulcrumassets";
+  for (const server of getServersOfStrength(strength)) {
+    if (NS.getServerRequiredHackingLevel(server) < NS.getServerRequiredHackingLevel(easiestServer)) {
+      if (NS.getServerMaxMoney(server) > 0) {
+        easiestServer = server;
+      }
+    }
+  }
+  return easiestServer;
 }
 
 // Crack open input server
@@ -72,12 +97,13 @@ function crack(server) {
 }
 
 async function setupLevel(level) {
-  let targetServer = getRichestServerOfStrength(level);
+  let targetServer = findEasiestHack(level);
   crack (targetServer);
   let serversOfStrength = getServersOfStrength(level);
   let requiredHacking = NS.getServerRequiredHackingLevel(targetServer);
   
   let currentHackingLevel = NS.getHackingLevel();
+
   // Wait until able to hack current target
   while (NS.getHackingLevel() < requiredHacking)
   {

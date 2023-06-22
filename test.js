@@ -29,7 +29,13 @@ export async function main(ns) {
     let serverStrength = ns.args[0];
     // ns.tprint("Desired server strength: " + serverStrength);
 
+    let hardestServer = "n00dles";
     for (const server of getServersOfStrength(serverStrength)) {
-        ns.tprint("Server: " + server + " has " + ns.formatNumber(ns.getServerMaxMoney(server)) + " available and requires " + ns.getServerRequiredHackingLevel(server) + " hacking level.");
+        //ns.tprint("Server: " + server + " has " + ns.formatNumber(ns.getServerMaxMoney(server)) + " available and requires " + ns.getServerRequiredHackingLevel(server) + " hacking level.");
+        if (ns.getServerRequiredHackingLevel(server) > ns.getServerRequiredHackingLevel(hardestServer)) {
+          hardestServer = server;
+        }
     }
+
+    ns.tprint (hardestServer + " is the hardest server to hack with a required hack of " + ns.getServerRequiredHackingLevel(hardestServer));
 }
