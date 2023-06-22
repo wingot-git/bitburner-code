@@ -120,10 +120,14 @@ async function execute (ns, HGW, server, requiredThreads, target) {
 export async function main(ns) {
     let target = ns.args[0];
     if (target == undefined) { target = "n00dles"; }
-    let server = "home";
+    let server = ns.getHostname();
     
-    // Weaken server prior to first hack
+    // Weaken and grow server prior to first hack
     let requiredWeakenThreads = calculateWeakenThreads(ns, target);
+    await execute(ns, "weaken", server, requiredWeakenThreads, target);
+    let requiredGrowThreads = calculateGrowThreads(ns, target);
+    await execute(ns, "grow", server, requiredGrowThreads, target);
+    requiredWeakenThreads = calculateWeakenThreads(ns, target);
     await execute(ns, "weaken", server, requiredWeakenThreads, target);
 
     while (true) {
@@ -133,7 +137,7 @@ export async function main(ns) {
         requiredWeakenThreads = calculateWeakenThreads(ns, target);
         await execute(ns, "weaken", server, requiredWeakenThreads, target);
 
-        let requiredGrowThreads = calculateGrowThreads(ns, target);
+        requiredGrowThreads = calculateGrowThreads(ns, target);
         await execute(ns, "grow", server, requiredGrowThreads, target);
 
         requiredWeakenThreads = calculateWeakenThreads(ns, target);
