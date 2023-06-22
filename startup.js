@@ -3,6 +3,7 @@ let NS = 0; // will be used to access NetScript globally
 const lowHackingScript = "oldHack.js";
 const mainHackingScript = "Controller/Brain.js";
 const adjunctHackingScripts = ["hack.js", "grow.js", "weaken.js"];
+let skipToLevel = 0;
 
 /** @param {NS} NS */
 function getAllServers() {
@@ -97,6 +98,7 @@ function crack(server) {
 }
 
 async function setupLevel(level) {
+  if (skipToLevel > level) { return; }
   let targetServer = findEasiestHack(level);
   crack (targetServer);
   let serversOfStrength = getServersOfStrength(level);
@@ -109,7 +111,7 @@ async function setupLevel(level) {
   {
     NS.print("Too weak for level " + level + " server " + targetServer + ". Current hacking skill: " + currentHackingLevel + ". Required hacking skill: " + requiredHacking + ". Waiting 5 minutes.");
     await NS.sleep(1000 * 60 * 5);
-    currentHackingLevel = NS.getHackingLevel
+    currentHackingLevel = NS.getHackingLevel();
   }
 
   // attempt to stagger 
@@ -131,6 +133,7 @@ async function waitFor(filename) {
 /** @param {NS} ns */
 export async function main(ns) {
   NS = ns;
+  skipToLevel = ns.args[0];
 
   await setupLevel(0);
 
