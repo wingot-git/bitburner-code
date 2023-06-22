@@ -9,8 +9,8 @@ export async function main(ns) {
   let startServer = ns.args[2];
   if (startServer == undefined) { startServer = 0; }
 
-  for(let i = startServer; i < servers; i++) {
-    let serverName = "pserver-" + i;
+  for(let i = 0; i < servers; i++) {
+    let serverName = "pserver-" + (i+startServer);
     ns.killall(serverName);
     ns.scp(mainHackingScript, serverName);
     ns.scp(adjunctHackingScripts, serverName);
