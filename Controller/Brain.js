@@ -50,13 +50,16 @@ function getScriptName(HGW)
     let script = "";
     switch (HGW) {
         case "hack":
-            script = "hack.js";
+            script = "Cell/hack.js";
             break;
         case "grow":
-            script = "grow.js";
+            script = "Cell/grow.js";
             break;
         case "weaken":
-            script = "weaken.js";
+            script = "Cell/weaken.js";
+            break;
+        case "share":
+            script = "Cell/share.js";
             break;
         default:
             throw("Unexpected HGW type input to getScriptName: " + HGW);
@@ -85,7 +88,17 @@ async function sleepForHGW(ns, HGW, target) {
             throw("Unexpected HGW type input to sleepForHGW: " + HGW);
     }
     
-    await ns.sleep(duration + 100);
+    // Utilise spare RAM for share()
+    let shareScript = getScriptName("share");
+    let shareThreads = calculateAvailableThreads(ns, ns.getHostname(), shareScript);
+    if (shareThreads > 0) {
+        let sharePID = ns.exec(shareScript, ns.getHostname(), shareThreads);
+        await ns.sleep(duration + 100);
+        ns.kill(sharePID);
+        await ns.sleep(100);
+    } else {
+        await ns.sleep(duration + 100);
+    }
 }
 
 /** @param {NS} ns */

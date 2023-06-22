@@ -1,5 +1,5 @@
 const mainHackingScript = "Controller/Brain.js";
-const adjunctHackingScripts = ["hack.js", "grow.js", "weaken.js"];
+const adjunctHackingScripts = ["Cell/share.js", "Cell/hack.js", "Cell/grow.js", "Cell/weaken.js"];
 const sleepSeconds = 60;
 
 /** @param {NS} ns */
