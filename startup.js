@@ -1,6 +1,6 @@
 // Global Variables
 let NS = 0; // will be used to access NetScript globally
-const hackingScript = "hack.js";
+const hackingScript = "oldHack.js";
 
 /** @param {NS} NS */
 function getAllServers() {
