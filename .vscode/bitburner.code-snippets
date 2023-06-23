@@ -1,9 +1,20 @@
 {
-	"": {
-		"prefix": "+boiler",
+	"boilerMain": {
+		"prefix": "+boilerMain",
 		"body": [
 		  "/** @param {NS} ns */",
 		  "export async function main(ns) {",
+		  "    ",
+		  "}"
+		],
+		"description": ""
+	  },
+
+	  "boilerFunction": {
+		"prefix": "+boilerFunction",
+		"body": [
+		  "/** @param {NS} ns */",
+		  "function functionName (ns) {",
 		  "    ",
 		  "}"
 		],
