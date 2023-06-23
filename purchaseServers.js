@@ -1,3 +1,12 @@
+// Purchase servers and run Brain
+// 
+// Args:
+// 1: ram per server
+// 2: number of servers
+// 3: first server number
+// 4: target server for hack
+//
+
 const mainHackingScript = "Controller/Brain.js";
 const adjunctHackingScripts = ["Cell/share.js", "Cell/hack.js", "Cell/grow.js", "Cell/weaken.js"];
 const sleepSeconds = 60;
@@ -20,6 +29,8 @@ export async function main(ns) {
     if (targetServer == undefined) { targetServer = "iron-gym"; }
 
     let purchasePrice = ns.getPurchasedServerCost(serverRam);
+
+    ns.print("Cost for server of size " + serverRam + " is " + ns.formatNumber(purchasePrice));
 
     let purchasedServers = 0;
     while (purchasedServers < numberOfServers) {
