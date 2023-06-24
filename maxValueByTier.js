@@ -1,9 +1,7 @@
-let NS = 0; // will be used to access NetScript globally
-
-function getAllServers() {
-  let servers = new Set(NS.scan());
+function getAllServers(ns) {
+  let servers = new Set(ns.scan());
    for (const server of servers) {
-      let newServers = new Set(NS.scan(server));
+      let newServers = new Set(ns.scan(server));
       for (const newServer of newServers) {
         servers.add(newServer);
       }
@@ -11,11 +9,11 @@ function getAllServers() {
   return servers;
 }
 
-function getServersOfStrength(strength) {
-  let allServers = getAllServers();
+function getServersOfStrength(ns, strength) {
+  let allServers = getAllServers(ns);
   let servers = new Set();
   for (const server of allServers) {
-    if (NS.getServerNumPortsRequired(server) == strength) {
+    if (ns.getServerNumPortsRequired(server) == strength) {
       servers.add(server);
     }
   }
@@ -23,12 +21,12 @@ function getServersOfStrength(strength) {
 }
 
 /** @param {NS} ns */
-function getRichestServerOfStrength(serverStrength) {
+function getRichestServerOfStrength(ns, serverStrength) {
     
     let richestServer = "n00dles";
 
-    for (const server of getServersOfStrength(serverStrength)) {
-      if (NS.getServerMaxMoney(server) > NS.getServerMaxMoney(richestServer)) {
+    for (const server of getServersOfStrength(ns, serverStrength)) {
+      if (ns.getServerMaxMoney(server) > ns.getServerMaxMoney(richestServer)) {
         richestServer = server;
       }
     }
@@ -38,9 +36,8 @@ function getRichestServerOfStrength(serverStrength) {
 
 /** @param {NS} ns */
 export async function main(ns) {
-  NS = ns;
   for (let i = 0; i <= 5; i++) {
-    var richestServer = getRichestServerOfStrength(i);
+    var richestServer = getRichestServerOfStrength(ns, i);
     ns.tprint("Richest server of tier " + i + " is " + richestServer + " with a value of " + ns.formatNumber(ns.getServerMaxMoney(richestServer)) + ".");
   }
 }

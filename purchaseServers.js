@@ -9,7 +9,7 @@
 
 const mainHackingScript = "Controller/Brain.js";
 const adjunctHackingScripts = ["Cell/share.js", "Cell/hack.js", "Cell/grow.js", "Cell/weaken.js"];
-const sleepSeconds = 60;
+const sleepSeconds = 5;
 
 /** @param {NS} ns */
 export async function main(ns) {
