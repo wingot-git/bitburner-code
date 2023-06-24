@@ -155,19 +155,28 @@ function calculateAvailableThreads (ns, hostname, script) {
     }
 }
 
-/** @param {NS} ns */
-/** @param any[] args */
+/** @param {NS} ns
+    @param any[] args */
 function allocateMemory (ns, requestID, script, requiredThreads, args) {
     ns.print("Required threads: " + requiredThreads);
 
     for (const server of servers) {
         let threadsToAllocate = calculateAvailableThreads(ns, server.getHostname(), script)
-        ns.print("Sever " + server.getHostname() + " threads available: " + threadsToAllocate);
+        ns.print("Sever " + server.getHostname() + " " + script + " threads available: " + threadsToAllocate);
 
         if (threadsToAllocate > 0) {
             if (threadsToAllocate > requiredThreads) { threadsToAllocate = requiredThreads; }
             ns.print("Would allocate " + threadsToAllocate + " threads.");
             // ns.exec(script, server, threadsToAllocate, args);
+            if (!ns.fileExists(script, server.getHostname())) {
+                ns.print("Copying file.");
+                ns.scp(script, server.getHostname());
+            }
+            if (!ns.fileExists("util/execute.js", server.getHostname())) {
+                ns.print("Copying file.");
+                ns.scp("util/execute.js", server.getHostname());
+            }
+            ns.exec("util/execute.js", server.getHostname(), 1, [script, threads, args]);
             threads.add(new thread(requestID, server, script, threadsToAllocate));
             requiredThreads -= threadsToAllocate;
             if (requiredThreads <= 0) { return true; }
