@@ -6,9 +6,9 @@
 
 const mainHackingScript = "Controller/Brain.js";
 const SHGWScripts = ["Cell/share.js", "Cell/hack.js", "Cell/grow.js", "Cell/weaken.js"];
-const HWGWRequestIDCount = 0;
-const requestPort = undefined;
-const responsePort = undefined;
+let HWGWRequestIDCount = 0;
+let requestPort = undefined;
+let responsePort = undefined;
 
 function getScriptName(HGW)
 {
@@ -65,11 +65,6 @@ async function checkResponse (ns, requestID) {
 
     responsePort.read();
     let response = responsePort.read();
-    if (response) {
-        ns.tprint("Request successful.");
-    } else {
-        ns.tprint("Request unsuccessful.");
-    }
 
     return response;
 }
@@ -86,8 +81,8 @@ function calculateGrowThreads (ns, target) {
 
 /** @param {NS} ns */
 function calculateWeakenThreads (ns, target) {
-    let securityLevel = ns.getServerSecurityLevel();
-    let minSecurity = ns.getServerMinSecurityLevel();
+    let securityLevel = ns.getServerSecurityLevel(target);
+    let minSecurity = ns.getServerMinSecurityLevel(target);
     let requiredDecrease = securityLevel - minSecurity;
 
     let securityRemovedPerThread = ns.weakenAnalyze(1);
@@ -137,36 +132,30 @@ async function prepareServer (ns, target, minSec, maxMoney) {
     let requestPort = ns.getPortHandle(1);
     let responsePort = ns.getPortHandle(2);
     
-    let currentSec = ns.getServerSecurityLevel(target);
-    if (currentSec > minSec) {
-        await execute (ns, "weaken", ns.getHostname(), calculateWeakenThreads(ns, target), target);
-        currentSec = ns.getServerSecurityLevel(target);
-    }
-
     let currentMoney = ns.getServerMoneyAvailable(target);
     while (currentMoney < maxMoney) {
-        currentSec = ns.getServerSecurityLevel(target);
+        let currentSec = ns.getServerSecurityLevel(target);
         if (currentSec > minSec) {
             let requestID = requestThreads(ns, getScriptName("W"), calculateWeakenThreads(ns, target), target);
-            if (!await checkResponse(requestID)) {
+            if (!await checkResponse(ns, requestID)) {
                 ns.tprint("HWGW error weakening " + target + " during prep with request ID " + requestID);
             }
 
             await ns.sleep(ns.getWeakenTime(target) + 100);
             releaseThreads(ns, requestID);
-            if (!await checkResponse(requestID)) {
+            if (!await checkResponse(ns, requestID)) {
                 ns.tprint("HWGW error releasing weaken threads during prep with requestID " + requestID);
             }
         }
         else if (currentMoney < maxMoney) {
             let requestID = requestThreads(ns, getScriptName("G"), calculateGrowThreads(ns, target), target);
-            if (!await checkResponse(requestID)) {
+            if (!await checkResponse(ns, requestID)) {
                 ns.tprint("HWGW error growing " + target + " during prep with request ID " + requestID);
             }
 
             await ns.sleep(ns.getGrowTime(target) + 100);
             releaseThreads(ns, requestID);
-            if (!await checkResponse(requestID)) {
+            if (!await checkResponse(ns, requestID)) {
                 ns.tprint("HWGW error releasing grow threads during prep with requestID " + requestID);
             }
 
@@ -175,13 +164,13 @@ async function prepareServer (ns, target, minSec, maxMoney) {
     }
 
     let requestID = requestThreads(ns, getScriptName("W"), calculateWeakenThreads(ns, target), target);
-    if (!await checkResponse(requestID)) {
+    if (!await checkResponse(ns, requestID)) {
         ns.tprint("HWGW error weakening " + target + " during prep with request ID " + requestID);
     }
 
     await ns.sleep(ns.getWeakenTime(target) + 100);
     releaseThreads(ns, requestID);
-    if (!await checkResponse(requestID)) {
+    if (!await checkResponse(ns, requestID)) {
         ns.tprint("HWGW error releasing weaken threads during prep with requestID " + requestID);
     }
 
