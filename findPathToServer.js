@@ -45,11 +45,11 @@ export async function main(ns) {
     }
 
     let pathLength = pathToServer.length;
-    let path = "home";
+    let path = "";
     for (let i = 0; i < pathLength; i++) {
         let server = pathToServer.pop();
         // ns.tprint("Server: " + server.getName() + ". Parent: " + server.getParent() + ".");
-        path += " => " + server.getName();
+        path += "connect " + server.getName() + "; ";
     }
-    ns.tprint("Path: " + path);
+    ns.tprint("Command line input: " + path);
 }

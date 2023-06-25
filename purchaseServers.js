@@ -9,7 +9,7 @@
 
 const mainHackingScript = "Controller/Brain.js";
 const adjunctHackingScripts = ["Cell/share.js", "Cell/hack.js", "Cell/grow.js", "Cell/weaken.js"];
-const sleepSeconds = 5;
+const sleepSeconds = 1;
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -22,11 +22,12 @@ export async function main(ns) {
     let numberOfServers = ns.args[1];
     let firstServerNumber = ns.args[2];
     let targetServer = ns.args[3];
+    let executeBrain = true;
     
     if (serverRam == undefined) { serverRam = 64; }
     if (numberOfServers == undefined) { numberOfServers = 1; }
     if (firstServerNumber == undefined) { firstServerNumber = 0; }
-    if (targetServer == undefined) { targetServer = "iron-gym"; }
+    if (targetServer == undefined) { executeBrain = false; }
 
     let purchasePrice = ns.getPurchasedServerCost(serverRam);
 
@@ -43,10 +44,12 @@ export async function main(ns) {
 
         let serverName = "pserver-" + (firstServerNumber+purchasedServers++);
         ns.purchaseServer(serverName, serverRam);
-        ns.scp(mainHackingScript, serverName);
-        ns.scp(adjunctHackingScripts, serverName);
-        // ns.tprint("Creating server: " + serverName + " and telling it to hack " + targetServer);
-        ns.exec(mainHackingScript, serverName, 1, targetServer);
+        if (executeBrain) {
+            ns.scp(mainHackingScript, serverName);
+            ns.scp(adjunctHackingScripts, serverName);
+            // ns.tprint("Creating server: " + serverName + " and telling it to hack " + targetServer);
+            ns.exec(mainHackingScript, serverName, 1, targetServer);
+        }
         await ns.sleep(1000 * sleepSeconds);
     }
 }
