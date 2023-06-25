@@ -4,6 +4,8 @@ const sleepSeconds = 60;
 
 /** @param {NS} ns */
 export async function main(ns) {
+    ns.disableLog("getServerMoneyAvailable");
+    
     let serverRam = ns.args[0];
     if (serverRam == "help")
     {
@@ -25,12 +27,19 @@ export async function main(ns) {
         let currentMoney = ns.getServerMoneyAvailable("home");      
         while (currentMoney < upgradePrice)
         {
+            ns.print("Insufficient money for upgrade. Upgrade cost: ", ns.formatNumber(upgradePrice),", Available money: ", ns.formatNumber(currentMoney));
             await ns.sleep(1000 * 60);
             currentMoney = ns.getServerMoneyAvailable("home");
         }
 
         let serverName = "pserver-" + (firstServerNumber+purchasedServers++);
         ns.upgradePurchasedServer(serverName, serverRam);
+        
+        // Notify ThreadController of upgrade
+        let requestPort = ns.getPortHandle(1);
+        requestPort.tryWrite("upgrade");
+        requestPort.tryWrite(serverName);
+
         await ns.sleep(1000);
     }
 }

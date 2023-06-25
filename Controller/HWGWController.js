@@ -7,6 +7,7 @@
 const mainHackingScript = "Controller/Brain.js";
 const SHGWScripts = ["Cell/share.js", "Cell/hack.js", "Cell/grow.js", "Cell/weaken.js"];
 let HWGWRequestIDCount = 0;
+let HWGWBatchCount = 1;
 let requestPort = undefined;
 let responsePort = undefined;
 
@@ -97,7 +98,7 @@ function calculateWeakenThreads (ns, target) {
 
 /** @param {NS} ns */
 async function runHWGWBatch (ns, target, minSec, maxMoney) {
-    ns.print("Submitting batch ", (HWGWRequestIDCount + 0.25)/4);
+    ns.print("Commencing batch ", HWGWBatchCount++);
     let hackTime = ns.getHackTime(target);
     let growTime = ns.getGrowTime(target);
     let weakenTime = ns.getWeakenTime(target);
@@ -235,9 +236,6 @@ export async function main(ns) {
         }
 
         ns.print("Threads submitted. Sleeping ", weakenTime/1000, " seconds.")
-        await ns.sleep (weakenTime);
-
-        ns.print("Batch completed. Sleeping ", weakenTime/1000, " seconds.")
         await ns.sleep (weakenTime);
 
         ns.print("Pause completed. Re-preparing server.")

@@ -1,6 +1,6 @@
 // Global Variables
 let NS = 0; // will be used to access NetScript globally
-const lowHackingScript = "oldHack.js";
+const lowHackingScript = "util/oldHack.js";
 const mainHackingScript = "Controller/Brain.js";
 const adjunctHackingScripts = ["Cell/share.js", "Cell/hack.js", "Cell/grow.js", "Cell/weaken.js"];
 let skipToLevel = 0;
@@ -151,6 +151,7 @@ export async function main(ns) {
   skipToLevel = ns.args[0];
 
   await setupLevel(0);
+  return;
 
   await waitFor("BruteSSH.exe");
   await setupLevel(1);

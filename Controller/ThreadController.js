@@ -16,6 +16,10 @@
 // Port 1 args: "release", requestID;
 // Port 2: Response (requestID, "true/false")
 //
+// Reset
+// Port 1 args: "reset"
+// Port 2: Nil response
+//
 
 const servers = [];
 const threads = new Set();
@@ -30,6 +34,8 @@ class server {
     getHostname() { return this.hostname; }
 
     getRamAvailable() { return (this.maxRam) - this.usedRam; }
+
+    getMaxRam() { return this.maxRam; }
 
     allocateRam(ramToUtilise) {
         if (this.getRamAvailable() > ramToUtilise) {
@@ -105,7 +111,7 @@ function upgradeServer(ns, hostname)
 
     for (const server of servers) {
         if (hostname == server.getHostname()) {
-            if (server.maxRam > newMaxRam) {
+            if (server.getMaxRam() >= newMaxRam) {
                 ns.print(hostname + " now has " + ns.formatNumber(newMaxRam) + " available, up from " + ns.formatNumber(server.maxRam));
                 server.refreshAvailableRam(newMaxRam);
             } else {
@@ -249,6 +255,16 @@ export async function main(ns) {
 
                 releaseMemory(ns, requestID);
                 writeResponseData(ns, requestID, "true");
+            }
+            else if (portData == "reset") {
+                ns.tprint("Thread Controller was reset. I hope that was intentional!");
+                
+                let serverLength = server.length;
+                for (let i = 0; i < serverLength; i++) {
+                    servers.pop();
+                }
+
+                threads.clear();
             }
         }
 
