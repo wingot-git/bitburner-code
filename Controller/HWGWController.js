@@ -39,13 +39,18 @@ function getScriptName(HGW)
 
 /** @param {NS} ns */
 function requestThreads (ns, scriptToRun, requiredThreads, target) {
+    if (requiredThreads == 0) 
+    {
+        ns.print("Nil threads requested. Terminating request.");
+        return;
+    }
     let requestID = "HWGWRequest-" + HWGWRequestIDCount++;
 
     requestPort.tryWrite("request");
     requestPort.tryWrite(requestID);
     requestPort.tryWrite(scriptToRun);
     requestPort.tryWrite(requiredThreads);
-    requestPort.tryWrite(JSON.stringify(target));
+    requestPort.tryWrite(JSON.stringify([target]));
 
     return requestID;
 }
@@ -59,8 +64,8 @@ function releaseThreads (ns, requestID) {
 /** @param {NS} ns */
 async function checkResponse (ns, requestID) {
     while (responsePort.peek() != requestID) {
-        ns.print("Waiting on response. Current responsePort value: " + responsePort.peek());
-        await ns.sleep(10);
+        // ns.print("Waiting on response. Current responsePort value: " + responsePort.peek());
+        await ns.asleep(1);
     }
 
     responsePort.read();
@@ -71,10 +76,10 @@ async function checkResponse (ns, requestID) {
 
 /** @param {NS} ns */
 function calculateGrowThreads (ns, target) {
-    let maxMoney = ns.getServerMaxMoney;
-    let availableMoney = ns.getServerMoneyAvailable;
-    let currentPercent = availableMoney / maxMoney;
-    let growthMultiplier = 1/(1-actualHackPercent)
+    let maxMoney = ns.getServerMaxMoney(target);
+    let availableMoney = ns.getServerMoneyAvailable(target);
+    let currentPercentMissing = 1-(availableMoney / maxMoney);
+    let growthMultiplier = 1/(1-currentPercentMissing);
     let requiredThreads = Math.ceil(ns.growthAnalyze(target, growthMultiplier));
     return requiredThreads;
 }
@@ -91,7 +96,7 @@ function calculateWeakenThreads (ns, target) {
 }
 
 /** @param {NS} ns */
-function runHWGWBatch (ns, target, minSec, maxMoney) {
+async function runHWGWBatch (ns, target, minSec, maxMoney) {
     let hackTime = ns.getHackTime(target);
     let growTime = ns.getGrowTime(target);
     let weakenTime = ns.getWeakenTime(target);
@@ -109,26 +114,52 @@ function runHWGWBatch (ns, target, minSec, maxMoney) {
     let weakenThreadsPerHack = Math.ceil(hackSecurityEffect / weakenPerThread);
     let weakenThreadsPerGrow = Math.ceil(growSecurityEffect / weakenPerThread);
 
-    ns.tprint("Hack threads: " + hackThreads);
+/*     ns.tprint("Hack threads: " + hackThreads);
     ns.tprint("Weaken threads to counteract hack: " + weakenThreadsPerHack);
     ns.tprint("Grow threads: " + growThreads);
     ns.tprint("Weaken threads to counteract grow: " + weakenThreadsPerGrow);
-    ns.tprint("Total time = " + weakenTime);
+    ns.tprint("Total time = " + ns.formatNumber(weakenTime)); */
 
-    let requestPort = ns.getPortHandle(1);
-    let responsePort = ns.getPortHandle(2);
-    let requestID = pid + "1";
     let accruedWait = 0;
-/*     while (!requestPort.tryWrite("request", requestID, SHGWScripts[4], weakenThreadsPerHack, JSON.stringify(target))) {
-        ns.sleep (20);
-    }
-    while (!responsePort.peek() == requestID) {
-        ns.sleep(20);
-    } */
+    let currentWait = 0;
+
+    //From here: Actually execute threads
+    let requestID_W1 = requestThreads (ns, getScriptName("W"), weakenThreadsPerHack, target);
+    await checkResponse(ns, requestID_W1);
+    currentWait = 50;
+
+    accruedWait += currentWait;
+    await ns.asleep(currentWait);
+    let requestID_W2 = requestThreads (ns, getScriptName("W"), weakenThreadsPerHack, target);
+    await checkResponse(ns, requestID_W2);
+    currentWait = weakenTime - growTime - 25;
+
+    accruedWait += currentWait;
+    await ns.asleep(currentWait);
+    let requestID_G = requestThreads (ns, getScriptName("G"), growThreads, target);
+    await checkResponse(ns, requestID_G);
+    currentWait = growTime - hackTime - 50;
+
+    accruedWait += currentWait;
+    await ns.asleep(currentWait);
+    let requestID_H = requestThreads (ns, getScriptName("H"), hackThreads, target);
+    await checkResponse(ns, requestID_H);
+    currentWait = hackTime;
+    await ns.asleep(currentWait);
+
+    releaseThreads(ns, requestID_W1);
+    await checkResponse(ns, requestID_W1);
+    releaseThreads(ns, requestID_W2);
+    await checkResponse(ns, requestID_W2);
+    releaseThreads(ns, requestID_G);
+    await checkResponse(ns, requestID_G);
+    releaseThreads(ns, requestID_H);
+    await checkResponse(ns, requestID_H);
 }
 
 /** @param {NS} ns */
 async function prepareServer (ns, target, minSec, maxMoney) {
+    console.log("Preparing server ", target);
     let requestPort = ns.getPortHandle(1);
     let responsePort = ns.getPortHandle(2);
     
@@ -163,15 +194,17 @@ async function prepareServer (ns, target, minSec, maxMoney) {
         }
     }
 
-    let requestID = requestThreads(ns, getScriptName("W"), calculateWeakenThreads(ns, target), target);
-    if (!await checkResponse(ns, requestID)) {
-        ns.tprint("HWGW error weakening " + target + " during prep with request ID " + requestID);
-    }
+    if (calculateWeakenThreads(ns, target) > 0) {
+        let requestID = requestThreads(ns, getScriptName("W"), calculateWeakenThreads(ns, target), target);
+        if (!await checkResponse(ns, requestID)) {
+            ns.tprint("HWGW error weakening " + target + " during prep with request ID " + requestID);
+        }
 
-    await ns.sleep(ns.getWeakenTime(target) + 100);
-    releaseThreads(ns, requestID);
-    if (!await checkResponse(ns, requestID)) {
-        ns.tprint("HWGW error releasing weaken threads during prep with requestID " + requestID);
+        await ns.sleep(ns.getWeakenTime(target) + 100);
+        releaseThreads(ns, requestID);
+        if (!await checkResponse(ns, requestID)) {
+            ns.tprint("HWGW error releasing weaken threads during prep with requestID " + requestID);
+        }
     }
 
     await ns.sleep(100);
@@ -179,14 +212,34 @@ async function prepareServer (ns, target, minSec, maxMoney) {
 
 /** @param {NS} ns */
 export async function main(ns) {
+    ns.disableLog("sleep");
+    ns.disableLog("asleep");
     requestPort = ns.getPortHandle(1);
     responsePort = ns.getPortHandle(2);
 
     let target = ns.args[0];
+
     let minSec = ns.getServerMinSecurityLevel(target);
     let maxMoney = ns.getServerMaxMoney(target);
 
     await prepareServer(ns, target, minSec, maxMoney);
 
-    // runHWGWBatch(ns, target, minSec, maxMoney);
+    let weakenTime = ns.getWeakenTime(target);
+    let currentTime = 0;
+
+    while (true) {
+        while (currentTime < weakenTime) {
+            runHWGWBatch(ns, target, minSec, maxMoney);
+            currentTime += 200;
+            await ns.sleep(200);
+        }
+
+        await ns.sleep (weakenTime);
+        await ns.sleep (1000 * 60);
+        await prepareServer(ns, target, minSec, maxMoney);
+        currentTime = 0;
+    }
+
+    ns.print("Finished running. Waiting 1 minute before closing.");
+    await ns.sleep(60000);
 }

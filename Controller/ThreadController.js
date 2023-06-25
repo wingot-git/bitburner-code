@@ -6,9 +6,10 @@
 // 
 // Manage servers
 // Port 1 args: "add/upgrade", hostname;
+// Port 2: Nil response.
 //
 // Request threads
-// Port 1 args: "request", requestID, scriptToRun, requiredThreads, args (as JSON);
+// Port 1 args: "request", requestID, scriptToRun, requiredThreads, args[] (as JSON);
 // Port 2: Response (requestID, true/false)
 //
 // Release threads
@@ -28,7 +29,7 @@ class server {
 
     getHostname() { return this.hostname; }
 
-    getRamAvailable() { return this.maxRam - this.usedRam; }
+    getRamAvailable() { return (this.maxRam) - this.usedRam; }
 
     allocateRam(ramToUtilise) {
         if (this.getRamAvailable() > ramToUtilise) {
@@ -78,6 +79,7 @@ class thread {
 /** @param {NS} ns */
 function addServer(ns, hostname) {
     for (const server of servers) {
+        // console.log("Server known to ThreadContoller: ", server.getHostname());
         if (hostname == server.getHostname()) {
             // throw new Error ('Server ' + hostname + ' already exists in servers.');
             ns.print("Server " + hostname + " already listed in available servers.");
@@ -111,6 +113,11 @@ function upgradeServer(ns, hostname)
             }
         }
     }
+}
+
+/** @param {NS} ns */
+function getServerRam (ns) {
+    
 }
 
 /** @param {NS} ns */
@@ -153,11 +160,13 @@ function calculateAvailableThreads (ns, hostname, script) {
             return Math.floor(threadsAvailable);
         }
     }
+
+    return 0;
 }
 
 /** @param {NS} ns
     @param any[] args */
-function allocateMemory (ns, requestID, script, requiredThreads, args) {
+function allocateMemory (ns, requestID, script, requiredThreads, inputArgs) {
     ns.print("Required threads: " + requiredThreads);
 
     for (const server of servers) {
@@ -167,16 +176,16 @@ function allocateMemory (ns, requestID, script, requiredThreads, args) {
         if (threadsToAllocate > 0) {
             if (threadsToAllocate > requiredThreads) { threadsToAllocate = requiredThreads; }
             ns.print("Would allocate " + threadsToAllocate + " threads.");
-            // ns.exec(script, server, threadsToAllocate, args);
-            if (!ns.fileExists(script, server.getHostname())) {
-                ns.print("Copying file.");
-                ns.scp(script, server.getHostname());
+
+            ns.scp(script, server.getHostname());
+
+            let args = [script, server.getHostname(), threadsToAllocate];
+
+            for (const arg of inputArgs) {
+                args.push(arg);
             }
-            if (!ns.fileExists("util/execute.js", server.getHostname())) {
-                ns.print("Copying file.");
-                ns.scp("util/execute.js", server.getHostname());
-            }
-            ns.exec("util/execute.js", server.getHostname(), 1, [script, threads, args]);
+
+            ns.run("util/execute.js", 1, ...args);
             threads.add(new thread(requestID, server, script, threadsToAllocate));
             requiredThreads -= threadsToAllocate;
             if (requiredThreads <= 0) { return true; }
@@ -199,9 +208,11 @@ function releaseMemory (ns, requestID) {
 
 /** @param {NS} ns */
 export async function main(ns) {
+    ns.disableLog("disableLog");
     ns.disableLog("sleep");
     ns.disableLog("getServerMaxRam");
     ns.disableLog("getServerUsedRam");
+    ns.disableLog("scp");
 
     let port = ns.getPortHandle(1);
     while (true) {
@@ -218,8 +229,13 @@ export async function main(ns) {
                 let requestID = readRequestData(ns);
                 let script = readRequestData(ns);
                 let threads = readRequestData(ns);
+
                 /** @type {any[]} */
                 let args = JSON.parse(readRequestData(ns));
+                if (!Array.isArray(args)) { 
+                    ns.print("Expected array as args input, received " + typeof(args) + ". Converting to array.");
+                    args = new Array(args);
+                }
 
                 if (isAvailableMemorySufficient(ns, script, threads)) {
                     allocateMemory(ns, requestID, script, threads, args);
@@ -236,6 +252,6 @@ export async function main(ns) {
             }
         }
 
-        await ns.sleep(20);
+        await ns.sleep(1);
     }
 }
