@@ -10,6 +10,7 @@ class serverClass {
 
 /** @param {NS} ns */
 export async function main(ns) {
+    ns.disableLog("sleep");
     let serverToFind = ns.args[0];
     if (serverToFind == undefined) {
         ns.tprint("Please enter a server to find as first argument.");

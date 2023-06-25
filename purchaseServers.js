@@ -44,6 +44,12 @@ export async function main(ns) {
 
         let serverName = "pserver-" + (firstServerNumber+purchasedServers++);
         ns.purchaseServer(serverName, serverRam);
+
+        // Notify ThreadController of existence
+        let requestPort = ns.getPortHandle(1);
+        requestPort.tryWrite("add");
+        requestPort.tryWrite(serverName);
+
         if (executeBrain) {
             ns.scp(mainHackingScript, serverName);
             ns.scp(adjunctHackingScripts, serverName);
