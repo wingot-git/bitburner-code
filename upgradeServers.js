@@ -34,6 +34,7 @@ export async function main(ns) {
 
         let serverName = "pserver-" + (firstServerNumber+purchasedServers++);
         ns.upgradePurchasedServer(serverName, serverRam);
+        ns.print("Server ",serverName," upgraded to ",serverRam,"GB Ram. ThreadController notified.");
         
         // Notify ThreadController of upgrade
         let requestPort = ns.getPortHandle(1);

@@ -53,7 +53,6 @@ export async function main(ns) {
         if (executeBrain) {
             ns.scp(mainHackingScript, serverName);
             ns.scp(adjunctHackingScripts, serverName);
-            // ns.tprint("Creating server: " + serverName + " and telling it to hack " + targetServer);
             ns.exec(mainHackingScript, serverName, 1, targetServer);
         }
         await ns.sleep(1000 * sleepSeconds);

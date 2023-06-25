@@ -111,19 +111,10 @@ function upgradeServer(ns, hostname)
 
     for (const server of servers) {
         if (hostname == server.getHostname()) {
-            if (server.getMaxRam() >= newMaxRam) {
-                ns.print(hostname + " now has " + ns.formatNumber(newMaxRam) + " available, up from " + ns.formatNumber(server.maxRam));
-                server.refreshAvailableRam(newMaxRam);
-            } else {
-                ns.print("Not a RAM Upgrade. Requested new RAM = " + ns.formatNumber(newMaxRam) + ". Server " + hostname + " already has " + ns.formatNumber(server.maxRam));
-            }
+            ns.print(hostname + " now has " + ns.formatNumber(newMaxRam) + " available, up from " + ns.formatNumber(server.maxRam));
+            server.refreshAvailableRam(newMaxRam);
         }
     }
-}
-
-/** @param {NS} ns */
-function getServerRam (ns) {
-    
 }
 
 /** @param {NS} ns */
@@ -243,10 +234,13 @@ export async function main(ns) {
                     args = new Array(args);
                 }
 
+                ns.print("Received request to run ", script," with ",threads," threads. Checking available memory.");
+
                 if (isAvailableMemorySufficient(ns, script, threads)) {
                     allocateMemory(ns, requestID, script, threads, args);
                     writeResponseData(ns, requestID, "true");
                 } else {
+                    ns.print("Insufficient memory available.");
                     writeResponseData(ns, requestID, "false");
                 }
             }
