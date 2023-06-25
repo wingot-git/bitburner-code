@@ -1,4 +1,4 @@
-// Run HGW Batches on a list of server
+// Run HWGW Batches on a list of server
 // 
 // Args:
 // 1: target
@@ -97,6 +97,7 @@ function calculateWeakenThreads (ns, target) {
 
 /** @param {NS} ns */
 async function runHWGWBatch (ns, target, minSec, maxMoney) {
+    ns.print("Submitting batch ", (HWGWRequestIDCount + 0.25)/4);
     let hackTime = ns.getHackTime(target);
     let growTime = ns.getGrowTime(target);
     let weakenTime = ns.getWeakenTime(target);
@@ -113,12 +114,6 @@ async function runHWGWBatch (ns, target, minSec, maxMoney) {
     let weakenPerThread = ns.weakenAnalyze(1);
     let weakenThreadsPerHack = Math.ceil(hackSecurityEffect / weakenPerThread);
     let weakenThreadsPerGrow = Math.ceil(growSecurityEffect / weakenPerThread);
-
-/*     ns.tprint("Hack threads: " + hackThreads);
-    ns.tprint("Weaken threads to counteract hack: " + weakenThreadsPerHack);
-    ns.tprint("Grow threads: " + growThreads);
-    ns.tprint("Weaken threads to counteract grow: " + weakenThreadsPerGrow);
-    ns.tprint("Total time = " + ns.formatNumber(weakenTime)); */
 
     let accruedWait = 0;
     let currentWait = 0;
@@ -138,7 +133,7 @@ async function runHWGWBatch (ns, target, minSec, maxMoney) {
     await ns.asleep(currentWait);
     let requestID_G = requestThreads (ns, getScriptName("G"), growThreads, target);
     await checkResponse(ns, requestID_G);
-    currentWait = growTime - hackTime - 50;
+    currentWait = growTime - hackTime - 1000;
 
     accruedWait += currentWait;
     await ns.asleep(currentWait);
@@ -159,7 +154,7 @@ async function runHWGWBatch (ns, target, minSec, maxMoney) {
 
 /** @param {NS} ns */
 async function prepareServer (ns, target, minSec, maxMoney) {
-    console.log("Preparing server ", target);
+    // console.log("Preparing server ", target);
     let requestPort = ns.getPortHandle(1);
     let responsePort = ns.getPortHandle(2);
     
@@ -167,7 +162,9 @@ async function prepareServer (ns, target, minSec, maxMoney) {
     while (currentMoney < maxMoney) {
         let currentSec = ns.getServerSecurityLevel(target);
         if (currentSec > minSec) {
-            let requestID = requestThreads(ns, getScriptName("W"), calculateWeakenThreads(ns, target), target);
+            let weakenThreads = calculateWeakenThreads(ns, target);
+            ns.print("Weakening ", target, " with ", weakenThreads, " threads. Current security ", ns.formatNumber(currentSec), ", aiming for ", ns.formatNumber(minSec), ". Estimated time: ", ns.formatNumber(ns.getWeakenTime(target)/1000, 1), " seconds.");
+            let requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
             if (!await checkResponse(ns, requestID)) {
                 ns.tprint("HWGW error weakening " + target + " during prep with request ID " + requestID);
             }
@@ -179,7 +176,9 @@ async function prepareServer (ns, target, minSec, maxMoney) {
             }
         }
         else if (currentMoney < maxMoney) {
-            let requestID = requestThreads(ns, getScriptName("G"), calculateGrowThreads(ns, target), target);
+            let growThreads = calculateGrowThreads(ns, target);
+            ns.print("Growing ", target, " with ", growThreads, " threads. Current money ", ns.formatNumber(currentMoney), ", aiming for ", ns.formatNumber(maxMoney), ". Estimated time: ", ns.formatNumber(ns.getGrowTime(target)/1000, 1), " seconds.");
+            let requestID = requestThreads(ns, getScriptName("G"), growThreads, target);
             if (!await checkResponse(ns, requestID)) {
                 ns.tprint("HWGW error growing " + target + " during prep with request ID " + requestID);
             }
@@ -195,7 +194,9 @@ async function prepareServer (ns, target, minSec, maxMoney) {
     }
 
     if (calculateWeakenThreads(ns, target) > 0) {
-        let requestID = requestThreads(ns, getScriptName("W"), calculateWeakenThreads(ns, target), target);
+        let weakenThreads = calculateWeakenThreads(ns, target);
+        ns.print("Final weakening of ", target, " with ", weakenThreads, " threads. Current security ", ns.formatNumber(ns.getServerSecurityLevel(target)), ", aiming for ", ns.formatNumber(minSec),". Estimated time: ", ns.formatNumber(ns.getWeakenTime(target)/1000, 1), " seconds.");
+        let requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
         if (!await checkResponse(ns, requestID)) {
             ns.tprint("HWGW error weakening " + target + " during prep with request ID " + requestID);
         }
@@ -212,8 +213,7 @@ async function prepareServer (ns, target, minSec, maxMoney) {
 
 /** @param {NS} ns */
 export async function main(ns) {
-    ns.disableLog("sleep");
-    ns.disableLog("asleep");
+    ns.disableLog("ALL");
     requestPort = ns.getPortHandle(1);
     responsePort = ns.getPortHandle(2);
 
@@ -230,16 +230,18 @@ export async function main(ns) {
     while (true) {
         while (currentTime < weakenTime) {
             runHWGWBatch(ns, target, minSec, maxMoney);
-            currentTime += 200;
-            await ns.sleep(200);
+            currentTime += 1000;
+            await ns.sleep(1000);
         }
 
+        ns.print("Threads submitted. Sleeping ", weakenTime/1000, " seconds.")
         await ns.sleep (weakenTime);
-        await ns.sleep (1000 * 60);
+
+        ns.print("Batch completed. Sleeping ", weakenTime/1000, " seconds.")
+        await ns.sleep (weakenTime);
+
+        ns.print("Pause completed. Re-preparing server.")
         await prepareServer(ns, target, minSec, maxMoney);
         currentTime = 0;
     }
-
-    ns.print("Finished running. Waiting 1 minute before closing.");
-    await ns.sleep(60000);
 }
