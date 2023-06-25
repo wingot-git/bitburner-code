@@ -166,28 +166,32 @@ async function prepareServer (ns, target, minSec, maxMoney) {
             let weakenThreads = calculateWeakenThreads(ns, target);
             ns.print("Weakening ", target, " with ", weakenThreads, " threads. Current security ", ns.formatNumber(currentSec), ", aiming for ", ns.formatNumber(minSec), ". Estimated time: ", ns.formatNumber(ns.getWeakenTime(target)/1000, 1), " seconds.");
             let requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
-            if (!await checkResponse(ns, requestID)) {
-                ns.tprint("HWGW error weakening " + target + " during prep with request ID " + requestID);
+            if (await checkResponse(ns, requestID) == "false") {
+                ns.print("HWGW error weakening " + target + " during prep with request ID " + requestID);
+                await ns.sleep(5000);
+                continue;
             }
 
             await ns.sleep(ns.getWeakenTime(target) + 100);
             releaseThreads(ns, requestID);
-            if (!await checkResponse(ns, requestID)) {
-                ns.tprint("HWGW error releasing weaken threads during prep with requestID " + requestID);
+            if (await checkResponse(ns, requestID) == "false") {
+                ns.print("HWGW error releasing weaken threads during prep with requestID " + requestID);
             }
         }
         else if (currentMoney < maxMoney) {
             let growThreads = calculateGrowThreads(ns, target);
             ns.print("Growing ", target, " with ", growThreads, " threads. Current money ", ns.formatNumber(currentMoney), ", aiming for ", ns.formatNumber(maxMoney), ". Estimated time: ", ns.formatNumber(ns.getGrowTime(target)/1000, 1), " seconds.");
             let requestID = requestThreads(ns, getScriptName("G"), growThreads, target);
-            if (!await checkResponse(ns, requestID)) {
-                ns.tprint("HWGW error growing " + target + " during prep with request ID " + requestID);
+            if (await checkResponse(ns, requestID) == "false") {
+                ns.print("HWGW error growing " + target + " during prep with request ID " + requestID);
+                await ns.sleep(5000);
+                continue;
             }
 
             await ns.sleep(ns.getGrowTime(target) + 100);
             releaseThreads(ns, requestID);
-            if (!await checkResponse(ns, requestID)) {
-                ns.tprint("HWGW error releasing grow threads during prep with requestID " + requestID);
+            if (await checkResponse(ns, requestID) == "false") {
+                ns.print("HWGW error releasing grow threads during prep with requestID " + requestID);
             }
 
             currentMoney = ns.getServerMoneyAvailable(target);
@@ -198,14 +202,16 @@ async function prepareServer (ns, target, minSec, maxMoney) {
         let weakenThreads = calculateWeakenThreads(ns, target);
         ns.print("Final weakening of ", target, " with ", weakenThreads, " threads. Current security ", ns.formatNumber(ns.getServerSecurityLevel(target)), ", aiming for ", ns.formatNumber(minSec),". Estimated time: ", ns.formatNumber(ns.getWeakenTime(target)/1000, 1), " seconds.");
         let requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
-        if (!await checkResponse(ns, requestID)) {
-            ns.tprint("HWGW error weakening " + target + " during prep with request ID " + requestID);
+        if (await checkResponse(ns, requestID) == "false") {
+            ns.print("HWGW error weakening " + target + " during prep with request ID " + requestID);
+            await ns.sleep(5000);
+            return;
         }
 
         await ns.sleep(ns.getWeakenTime(target) + 100);
         releaseThreads(ns, requestID);
-        if (!await checkResponse(ns, requestID)) {
-            ns.tprint("HWGW error releasing weaken threads during prep with requestID " + requestID);
+        if (await checkResponse(ns, requestID) == "false") {
+            ns.print("HWGW error releasing weaken threads during prep with requestID " + requestID);
         }
     }
 
