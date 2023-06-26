@@ -168,12 +168,22 @@ async function prepareServer (ns, target, minSec, maxMoney) {
             let requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
             if (await checkResponse(ns, requestID) == "false") {
                 ns.print("HWGW error weakening " + target + " during prep with request ID " + requestID);
-                await ns.sleep(5000);
-                continue;
+                if (weakenThreads > 1) {
+                    weakenThreads = Math.ceil(calculateWeakenThreads(ns, target)/10);
+                    ns.print("Attempting with less threads. Trying thread count: ",weakenThreads);
+                    requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
+                    if (await checkResponse(ns, requestID) == "false") {
+                        ns.print("Still failed. Aborting attempt. Waiting 1 minute, then restarting cycle.");
+                        await ns.sleep(1000 * 60);
+                        continue;
+                    }
+                }
+                await ns.sleep(ns.getWeakenTime(target) + 100);
+            } else {
+                ns.print("Weakening ",target," with ",weakenThreads," threads.")
             }
 
-            await ns.sleep(ns.getWeakenTime(target) + 100);
-            releaseThreads(ns, requestID);
+            releaseThreads(ns, requestID);        
             if (await checkResponse(ns, requestID) == "false") {
                 ns.print("HWGW error releasing weaken threads during prep with requestID " + requestID);
             }
@@ -184,17 +194,27 @@ async function prepareServer (ns, target, minSec, maxMoney) {
             let requestID = requestThreads(ns, getScriptName("G"), growThreads, target);
             if (await checkResponse(ns, requestID) == "false") {
                 ns.print("HWGW error growing " + target + " during prep with request ID " + requestID);
-                await ns.sleep(5000);
-                continue;
-            }
+                if (growThreads > 1) {
+                    growThreads = Math.ceil(calculateGrowThreads(ns, target)/10);
+                    ns.print("Attempting with less threads. Trying thread count: ",growThreads);
+                    requestID = requestThreads(ns, getScriptName("G"), growThreads, target);
+                    if (await checkResponse(ns, requestID) == "false") {
+                        ns.print("Still failed. Aborting attempt. Waiting 1 minute, then restarting cycle.");
+                        await ns.sleep(1000 * 60);
+                        continue;
+                    }
+                }
 
-            await ns.sleep(ns.getGrowTime(target) + 100);
-            releaseThreads(ns, requestID);
-            if (await checkResponse(ns, requestID) == "false") {
-                ns.print("HWGW error releasing grow threads during prep with requestID " + requestID);
-            }
+                await ns.sleep(ns.getGrowTime(target) + 100);
+                releaseThreads(ns, requestID);
+                if (await checkResponse(ns, requestID) == "false") {
+                    ns.print("HWGW error releasing grow threads during prep with requestID " + requestID);
+                }
 
-            currentMoney = ns.getServerMoneyAvailable(target);
+                currentMoney = ns.getServerMoneyAvailable(target);
+            } else {
+                ns.print("Growing ",target," with ",growThreads," threads.")
+            }
         }
     }
 
@@ -204,11 +224,29 @@ async function prepareServer (ns, target, minSec, maxMoney) {
         let requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
         if (await checkResponse(ns, requestID) == "false") {
             ns.print("HWGW error weakening " + target + " during prep with request ID " + requestID);
-            await ns.sleep(5000);
-            return;
+            let continueWeakening = true;
+            while (continueWeakening) {
+                weakenThreads = Math.ceil(calculateWeakenThreads(ns, target)/10);
+                ns.print("Attempting with less threads. Trying thread count: ",weakenThreads);
+                requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
+                if (await checkResponse(ns, requestID) == "false") {
+                    ns.print("Still failed. Aborting attempt. Waiting 1 minute, then restarting cycle.");
+                    await ns.sleep(1000 * 60);
+                    continue;
+                } else {
+                    await ns.sleep(ns.getWeakenTime(target) + 100);
+                    releaseThreads(ns, requestID);
+                    if (await checkResponse(ns, requestID) == "false") {
+                        ns.print("HWGW error releasing weaken threads during prep with requestID " + requestID);
+                    }
+                }
+                continueWeakening = Math.ceil(calculateGrowThreads(ns, target)) > 0;
+            }
+        } else {
+            ns.print("Weakening ",target," with ",weakenThreads," threads.")
+            await ns.sleep(ns.getWeakenTime(target) + 100);
         }
 
-        await ns.sleep(ns.getWeakenTime(target) + 100);
         releaseThreads(ns, requestID);
         if (await checkResponse(ns, requestID) == "false") {
             ns.print("HWGW error releasing weaken threads during prep with requestID " + requestID);

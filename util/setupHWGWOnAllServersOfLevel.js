@@ -31,6 +31,6 @@ export async function main(ns) {
         if (ns.getServerMaxMoney(server) == 0) { continue; }
 
         ns.run("Controller/HWGWController.js", 1, server);
-        ns.sleep(1000);
+        await ns.sleep(1000 * 2.5);
     }
 }

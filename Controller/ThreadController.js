@@ -251,7 +251,10 @@ export async function main(ns) {
                 writeResponseData(ns, requestID, "true");
             }
             else if (portData == "reset") {
-                ns.tprint("Thread Controller was reset. I hope that was intentional!");
+                ns.print("\n---------------------------------------------------");
+                ns.print("Thread Controller was reset. I hope that was intentional!");
+                ns.print("---------------------------------------------------\n");
+                ns.tprint("ALERT: ThreadController was just reset. If unintentional, please investigate!");
                 
                 let serverLength = server.length;
                 for (let i = 0; i < serverLength; i++) {

@@ -24,7 +24,9 @@ export async function main(ns) {
 
   ns.run("util/crackAll.js");
   ns.run("Controller/ThreadController.js");
-  ns.run("purchaseServers",1,64,25);
-  ns.run("HWGWAllServersOfLevel",1,0);
+  ns.run("util/purchaseServers.js",1,64,25);
+  
+  await ns.sleep(100);
+  ns.run("util/setupHWGWOnAllServersOfLevel.js",1,0);
   cleanupFiles();
 }
