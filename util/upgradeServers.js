@@ -19,20 +19,20 @@ export async function main(ns) {
     if (numberOfServers == undefined) { numberOfServers = 1; }
     if (firstServerNumber == undefined) { firstServerNumber = 0; }
 
-    let upgradePrice = ns.getPurchasedServerUpgradeCost("pserver-" + (firstServerNumber), serverRam);
-    ns.print("Upgrade price = " + ns.formatNumber(upgradePrice));
-    
     let purchasedServers = 0;
     while (purchasedServers < numberOfServers) {
+        let serverName = "pserver-" + (firstServerNumber+purchasedServers++);
+        let upgradePrice = ns.getPurchasedServerUpgradeCost(serverName, serverRam);
+        ns.print("Upgrade price = " + ns.formatNumber(upgradePrice));
+
         let currentMoney = ns.getServerMoneyAvailable("home");      
         while (currentMoney < upgradePrice)
         {
-            ns.print("Insufficient money for upgrade. Upgrade cost: ", ns.formatNumber(upgradePrice),", Available money: ", ns.formatNumber(currentMoney));
+            ns.print("Insufficient money to upgrade server ",serverName," with ",ns.getServerMaxRam(serverName),"GB RAM to ",serverRam,"GB RAM. Upgrade cost: ", ns.formatNumber(upgradePrice),", Available money: ", ns.formatNumber(currentMoney));
             await ns.sleep(1000 * 60);
             currentMoney = ns.getServerMoneyAvailable("home");
         }
 
-        let serverName = "pserver-" + (firstServerNumber+purchasedServers++);
         ns.upgradePurchasedServer(serverName, serverRam);
         ns.print("Server ",serverName," upgraded to ",serverRam,"GB Ram. ThreadController notified.");
         

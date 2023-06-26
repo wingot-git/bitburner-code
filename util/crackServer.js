@@ -3,9 +3,9 @@ function crack(ns, server) {
     if (ns.hasRootAccess(server)) {
       return;
     }
-  
+
     let requiredPorts = ns.getServerNumPortsRequired(server);
-  
+
     // Use minimally invasive programs to crack
     if (requiredPorts == 5) {
       ns.sqlinject(server);
@@ -23,7 +23,7 @@ function crack(ns, server) {
       ns.brutessh(server);
     }
     ns.nuke(server);
-  }
+}
 
 /** @param {NS} ns */
 export async function main(ns) {
