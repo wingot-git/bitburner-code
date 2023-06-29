@@ -43,7 +43,7 @@ function requestThreads (ns, scriptToRun, requiredThreads, target) {
     if (requiredThreads == 0) 
     {
         ns.print("Nil threads requested. Terminating request.");
-        return;
+        return "nonAttempt";
     }
     let requestID = "HWGWRequest-" + HWGWRequestIDCount++;
 
@@ -79,8 +79,13 @@ async function checkResponse (ns, requestID) {
 function calculateGrowThreads (ns, target) {
     let maxMoney = ns.getServerMaxMoney(target);
     let availableMoney = ns.getServerMoneyAvailable(target);
-    let currentPercentMissing = 1-(availableMoney / maxMoney);
-    let growthMultiplier = 1/(1-currentPercentMissing);
+    let currentRatioMissing = 1-(availableMoney / maxMoney);
+    // if all the money is taken in a single hack, allow for grow's $1 base increase)
+    if (currentRatioMissing >= 1) { 
+        currentRatioMissing = 1-(1/maxMoney);
+    }
+    let growthMultiplier = 1/(1-currentRatioMissing);
+    console.log(currentRatioMissing," missing. ",availableMoney," currently available of max: ",maxMoney,". ",growthMultiplier," is growthMulti, with required threads: not yet known.");
     let requiredThreads = Math.ceil(ns.growthAnalyze(target, growthMultiplier));
     return requiredThreads;
 }
@@ -108,7 +113,18 @@ async function runHWGWBatch (ns, target, minSec, maxMoney) {
     let moneyPerThread = ns.hackAnalyze(target);
     let moneyStolen = hackThreads * moneyPerThread;
     let actualHackPercent = moneyStolen / maxMoney;
-    let growThreads = Math.ceil(ns.growthAnalyze(target, 1/(1-actualHackPercent))); // Calculates inverse of hacked amount
+    
+    // if all the money is taken in a single hack, allow for grow's $1 base increase)
+    if (actualHackPercent >= 100) { 
+        let actualHackPercent = (maxMoney-1)/maxMoney;
+    }
+
+    let growthMultiplier = 1/(1-actualHackPercent);
+    if (growthMultiplier < 1) {
+        growthMultiplier = 1;
+    }
+
+    let growThreads = Math.ceil(ns.growthAnalyze(target, growthMultiplier)); // Calculates inverse of hacked amount
 
     let hackSecurityEffect = ns.hackAnalyzeSecurity(hackThreads);
     let growSecurityEffect = ns.growthAnalyzeSecurity(growThreads);
@@ -164,11 +180,12 @@ async function prepareServer (ns, target, minSec, maxMoney) {
         let currentSec = ns.getServerSecurityLevel(target);
         if (currentSec > minSec) {
             let weakenThreads = calculateWeakenThreads(ns, target);
-            ns.print("Weakening ", target, " with ", weakenThreads, " threads. Current security ", ns.formatNumber(currentSec), ", aiming for ", ns.formatNumber(minSec), ". Estimated time: ", ns.formatNumber(ns.getWeakenTime(target)/1000, 1), " seconds.");
-            let requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
-            if (await checkResponse(ns, requestID) == "false") {
+            if (weakenThreads >= 1) {
+                ns.print("Weakening ", target, " with ", weakenThreads, " threads. Current security ", ns.formatNumber(currentSec), ", aiming for ", ns.formatNumber(minSec), ". Estimated time: ", ns.formatNumber(ns.getWeakenTime(target)/1000, 1), " seconds.");
+                let requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
+    
+                if (await checkResponse(ns, requestID) == "false") {
                 ns.print("HWGW error weakening " + target + " during prep with request ID " + requestID);
-                if (weakenThreads > 1) {
                     weakenThreads = Math.ceil(calculateWeakenThreads(ns, target)/10);
                     ns.print("Attempting with less threads. Trying thread count: ",weakenThreads);
                     requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
@@ -178,78 +195,88 @@ async function prepareServer (ns, target, minSec, maxMoney) {
                         continue;
                     }
                 }
-                await ns.sleep(ns.getWeakenTime(target) + 100);
-            } else {
-                ns.print("Weakening ",target," with ",weakenThreads," threads.")
-            }
 
-            releaseThreads(ns, requestID);        
-            if (await checkResponse(ns, requestID) == "false") {
-                ns.print("HWGW error releasing weaken threads during prep with requestID " + requestID);
+                await ns.sleep(ns.getWeakenTime(target) + 100);
+                releaseThreads(ns, requestID);        
+                if (await checkResponse(ns, requestID) == "false") {
+                    ns.print("HWGW error releasing weaken threads during prep with requestID " + requestID);
+                }    
+            } else {
+                ns.print("Less than one weakening threads detected against ", target, " with ", weakenThreads, " threads. Current security ", ns.formatNumber(currentSec), ", aiming for ", ns.formatNumber(minSec), ".");
+                await ns.sleep(1000);
+                continue;
             }
-        }
+         }
         else if (currentMoney < maxMoney) {
             let growThreads = calculateGrowThreads(ns, target);
-            ns.print("Growing ", target, " with ", growThreads, " threads. Current money ", ns.formatNumber(currentMoney), ", aiming for ", ns.formatNumber(maxMoney), ". Estimated time: ", ns.formatNumber(ns.getGrowTime(target)/1000, 1), " seconds.");
-            let requestID = requestThreads(ns, getScriptName("G"), growThreads, target);
-            if (await checkResponse(ns, requestID) == "false") {
-                ns.print("HWGW error growing " + target + " during prep with request ID " + requestID);
-                if (growThreads > 1) {
-                    growThreads = Math.ceil(calculateGrowThreads(ns, target)/10);
-                    ns.print("Attempting with less threads. Trying thread count: ",growThreads);
-                    requestID = requestThreads(ns, getScriptName("G"), growThreads, target);
-                    if (await checkResponse(ns, requestID) == "false") {
-                        ns.print("Still failed. Aborting attempt. Waiting 1 minute, then restarting cycle.");
-                        await ns.sleep(1000 * 60);
-                        continue;
+            if (growThreads >= 1) {
+                ns.print("Growing ", target, " with ", growThreads, " threads. Current money ", ns.formatNumber(currentMoney), ", aiming for ", ns.formatNumber(maxMoney), ". Estimated time: ", ns.formatNumber(ns.getGrowTime(target)/1000, 1), " seconds.");
+                let requestID = requestThreads(ns, getScriptName("G"), growThreads, target);
+                if (await checkResponse(ns, requestID) == "false") {
+                    ns.print("HWGW error growing " + target + " during prep with request ID " + requestID);
+                    if (growThreads > 1) {
+                        growThreads = Math.ceil(calculateGrowThreads(ns, target)/10);
+                        ns.print("Attempting with less threads. Trying thread count: ",growThreads);
+                        requestID = requestThreads(ns, getScriptName("G"), growThreads, target);
+                        if (await checkResponse(ns, requestID) == "false") {
+                            ns.print("Still failed. Aborting attempt. Waiting 1 minute, then restarting cycle.");
+                            await ns.sleep(1000 * 60);
+                            continue;
+                        }
                     }
+                    currentMoney = ns.getServerMoneyAvailable(target);
+                } else {
+                    ns.print("Growing ",target," with ",growThreads," threads.")
                 }
 
                 await ns.sleep(ns.getGrowTime(target) + 100);
+                currentMoney = ns.getServerMoneyAvailable(target);
                 releaseThreads(ns, requestID);
                 if (await checkResponse(ns, requestID) == "false") {
                     ns.print("HWGW error releasing grow threads during prep with requestID " + requestID);
                 }
-
-                currentMoney = ns.getServerMoneyAvailable(target);
             } else {
-                ns.print("Growing ",target," with ",growThreads," threads.")
+                ns.print("Less than one grow threads detected against ",target, " with ",growThreads, " threads. Current money ", ns.formatNumber(currentMoney), ", aiming for ", ns.formatNumber(maxMoney), ".");
+                await ns.sleep(1000);
+                continue;
             }
+
         }
     }
 
     if (calculateWeakenThreads(ns, target) > 0) {
         let weakenThreads = calculateWeakenThreads(ns, target);
+        if (weakenThreads == 0) {
+            ns.print("Final weakening not indicated on ",target," as zero threads required. Continuing to batch.");
+            return;
+        }
         ns.print("Final weakening of ", target, " with ", weakenThreads, " threads. Current security ", ns.formatNumber(ns.getServerSecurityLevel(target)), ", aiming for ", ns.formatNumber(minSec),". Estimated time: ", ns.formatNumber(ns.getWeakenTime(target)/1000, 1), " seconds.");
         let requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
-        if (await checkResponse(ns, requestID) == "false") {
-            ns.print("HWGW error weakening " + target + " during prep with request ID " + requestID);
-            let continueWeakening = true;
-            while (continueWeakening) {
-                weakenThreads = Math.ceil(calculateWeakenThreads(ns, target)/10);
-                ns.print("Attempting with less threads. Trying thread count: ",weakenThreads);
-                requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
-                if (await checkResponse(ns, requestID) == "false") {
-                    ns.print("Still failed. Aborting attempt. Waiting 1 minute, then restarting cycle.");
-                    await ns.sleep(1000 * 60);
-                    continue;
-                } else {
-                    await ns.sleep(ns.getWeakenTime(target) + 100);
-                    releaseThreads(ns, requestID);
-                    if (await checkResponse(ns, requestID) == "false") {
-                        ns.print("HWGW error releasing weaken threads during prep with requestID " + requestID);
-                    }
-                }
-                continueWeakening = Math.ceil(calculateGrowThreads(ns, target)) > 0;
-            }
-        } else {
-            ns.print("Weakening ",target," with ",weakenThreads," threads.")
-            await ns.sleep(ns.getWeakenTime(target) + 100);
-        }
+        if (!requestID == "nonAttempt") {
+            if (await checkResponse(ns, requestID) == "false") {
+                ns.print("HWGW error weakening " + target + " during prep with request ID " + requestID);
+                let continueWeakening = true;
+                while (continueWeakening) {
+                    weakenThreads = Math.ceil(calculateWeakenThreads(ns, target)/10);
+                    ns.print("Attempting with less threads. Trying thread count: ",weakenThreads);
+                    requestID = requestThreads(ns, getScriptName("W"), weakenThreads, target);
 
-        releaseThreads(ns, requestID);
-        if (await checkResponse(ns, requestID) == "false") {
-            ns.print("HWGW error releasing weaken threads during prep with requestID " + requestID);
+                    if (await checkResponse(ns, requestID) == "false") {
+                        ns.print("Still failed. Aborting attempt. Waiting 1 minute, then restarting cycle.");
+                        await ns.sleep(1000 * 60);
+                        continue;
+                    }
+                    continueWeakening = Math.ceil(calculateGrowThreads(ns, target)) > 0;
+                }
+            } else {
+                ns.print("Weakening ",target," with ",weakenThreads," threads.")
+            }
+
+            await ns.sleep(ns.getWeakenTime(target) + 100);
+            releaseThreads(ns, requestID);
+            if (await checkResponse(ns, requestID) == "false") {
+                ns.print("HWGW error releasing weaken threads during prep with requestID " + requestID);
+            }
         }
     }
 
@@ -275,14 +302,14 @@ export async function main(ns) {
     while (true) {
         while (currentTime < weakenTime) {
             runHWGWBatch(ns, target, minSec, maxMoney);
-            currentTime += 1000;
-            await ns.sleep(1000);
+            currentTime += 250;
+            await ns.sleep(250);
         }
 
         ns.print("Threads submitted. Sleeping ", weakenTime/1000, " seconds.")
         await ns.sleep (weakenTime);
 
-        ns.print("Pause completed. Re-preparing server.")
+        ns.print("Pause completed. Re-preparing server if required.")
         await prepareServer(ns, target, minSec, maxMoney);
         currentTime = 0;
     }
