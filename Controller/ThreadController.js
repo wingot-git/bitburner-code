@@ -33,12 +33,12 @@ class server {
 
     getHostname() { return this.hostname; }
 
-    getRamAvailable() { return (this.maxRam) - this.usedRam; }
+    getRamAvailable() { return (this.maxRam - this.usedRam); }
 
     getMaxRam() { return this.maxRam; }
 
     allocateRam(ramToUtilise) {
-        if (this.getRamAvailable() > ramToUtilise) {
+        if (this.getRamAvailable()*1.001 > ramToUtilise) {
             this.usedRam += ramToUtilise;
         } else {
             throw new Error('Insufficient available ram on ' + this.getHostname() + ' to allocate ' + ramToUtilise + ". MaxRam = " + this.maxRam + ", UsedRam = " + this.usedRam + ", free ram = " + this.getRamAvailable());
@@ -46,10 +46,11 @@ class server {
     }
 
     releaseRam(ramToFree) {
-        if (this.usedRam <= ramToFree) {
+        if (ramToFree <= this.usedRam) {
             this.usedRam -= ramToFree;
+            if (this.usedRam < 0) { this.usedRam = 0; }
         } else {
-            throw new Error('Trying to free more ram than used on ' + this.getHostname() + ". Used RAM: " + this.usedRam + ". Requested Free: " + ramToFree);
+            this.usedRam = 0;
         }
     }
 
@@ -75,10 +76,13 @@ class thread {
         let scriptRam = ns.getScriptRam(this.script);
 
         for (const server of servers) {
-            if (this.server == server.getHostname()) {
+            if (this.server == server) {
                 server.releaseRam(scriptRam * this.threads);
+                return true;
             }
         }
+
+        ns.print("Thread unable to release ram: server ",this.server.getHostname()," not found.");
     }
 }
 
@@ -152,9 +156,12 @@ function calculateAvailableThreads (ns, hostname, script) {
         // ns.print(server.getHostname());
 
         if (server.getHostname() == hostname) {
-            let threadsAvailable = server.getRamAvailable() / threadCost;
-            // ns.print("Threads available: " + threadsAvailable);
-            return Math.floor(threadsAvailable);
+            let availableRam = server.getRamAvailable();
+            // console.log("Available ram on ",server.getHostname()," is ",availableRam);
+            let threadsAvailable = availableRam / threadCost;
+            threadsAvailable = Math.floor(threadsAvailable);
+            ns.print(hostname," ",script," threads available: " + threadsAvailable);
+            return threadsAvailable;
         }
     }
 
@@ -172,7 +179,7 @@ function allocateMemory (ns, requestID, script, requiredThreads, inputArgs) {
 
         if (threadsToAllocate > 0) {
             if (threadsToAllocate > requiredThreads) { threadsToAllocate = requiredThreads; }
-            ns.print("Would allocate " + threadsToAllocate + " threads.");
+            ns.print("Allocating " + threadsToAllocate + " threads on ",server.getHostname());
 
             ns.scp(script, server.getHostname());
 
@@ -182,6 +189,8 @@ function allocateMemory (ns, requestID, script, requiredThreads, inputArgs) {
                 args.push(arg);
             }
 
+            let ramCostPerThread = ns.getScriptRam(script);
+            server.allocateRam(threadsToAllocate * ramCostPerThread);
             ns.run("util/execute.js", 1, ...args);
             threads.add(new thread(requestID, server, script, threadsToAllocate));
             requiredThreads -= threadsToAllocate;
@@ -201,6 +210,12 @@ function releaseMemory (ns, requestID) {
             threads.delete(thread);
         }
     }
+}
+
+/** @param {NS} ns */
+function invalidPortData (ns, data) {
+    if (data == "NULL PORT DATA") { return true; }
+    else { return false; }
 }
 
 /** @param {NS} ns */
@@ -227,8 +242,14 @@ export async function main(ns) {
                 let script = readRequestData(ns);
                 let threads = readRequestData(ns);
 
+                if(invalidPortData(threads)) { continue; }
+
                 /** @type {any[]} */
-                let args = JSON.parse(readRequestData(ns));
+                ns.print("Received request to run ", script," with ",threads," threads. Colleting args.");
+                let args = readRequestData(ns);
+                if(invalidPortData(args)) { continue; }
+
+                args = JSON.parse(args);
                 if (!Array.isArray(args)) { 
                     ns.print("Expected array as args input, received " + typeof(args) + ". Converting to array.");
                     args = new Array(args);
@@ -256,9 +277,12 @@ export async function main(ns) {
                 ns.print("---------------------------------------------------\n");
                 ns.tprint("ALERT: ThreadController was just reset. If unintentional, please investigate!");
                 
-                let serverLength = server.length;
+                let serverLength = servers.length;
+                // console.log("servers.length = ",serverLength);
+                
                 for (let i = 0; i < serverLength; i++) {
-                    servers.pop();
+                    let poppedServer = servers.pop();
+                    ns.print("Removed ",poppedServer," from server list.");
                 }
 
                 threads.clear();

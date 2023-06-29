@@ -36,13 +36,16 @@ export async function main(ns) {
     let purchasedServers = 0;
     while (purchasedServers < numberOfServers) {
         let currentMoney = ns.getServerMoneyAvailable("home");      
+        let serverName = "pserver-" + (firstServerNumber+purchasedServers++);
+
         while (currentMoney < purchasePrice)
         {
+            ns.print("Insufficent money for purchase of ",serverName,". Require: $",ns.formatNumber(purchasePrice),", Available: $",ns.formatNumber(currentMoney));
             await ns.sleep(1000 * 60);
             currentMoney = ns.getServerMoneyAvailable("home");
         }
 
-        let serverName = "pserver-" + (firstServerNumber+purchasedServers++);
+        ns.print("Purchasing ",serverName," for $",ns.formatNumber(purchasePrice));
         ns.purchaseServer(serverName, serverRam);
 
         // Notify ThreadController of existence

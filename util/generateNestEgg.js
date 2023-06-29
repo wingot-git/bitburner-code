@@ -13,17 +13,18 @@ function setupHackScript(ns, server, targetServer) {
         return;
     }
 
-    ns.tprint("Server: " + server + " has " + (maxRam-usedRam) + " GB RAM available, and can run " + maxInstances + " instances without going over 90%.");
-    ns.tprint("executing");
+    ns.print("Server: " + server + " has " + (maxRam-usedRam) + " GB RAM available, and can run " + maxInstances + " instances of ",hackingScript," without going over 90%.");
+    ns.print("executing");
     ns.exec(hackingScript, server, maxInstances, targetServer);
 }
 
 /** @param {NS} ns */
 export async function main(ns) {
-    ns.tprint("Initiating script");
+    ns.print("Initiating script");
     let server = "home";
     let targetServer = "n00dles";
-    ns.tprint("Commencing startup hack");
+    ns.print("Commencing startup hack");
     setupHackScript(ns, server, targetServer);
-    ns.tprint("exiting script");
+    ns.print("Exiting script");
+    await ns.sleep(5000); // Wait 5 seconds before terminating in case of needing to tail.
 }
