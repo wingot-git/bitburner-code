@@ -9,7 +9,6 @@
 
 const mainHackingScript = "Controller/Brain.js";
 const adjunctHackingScripts = ["Cell/share.js", "Cell/hack.js", "Cell/grow.js", "Cell/weaken.js"];
-const sleepSeconds = 1;
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -58,6 +57,6 @@ export async function main(ns) {
             ns.scp(adjunctHackingScripts, serverName);
             ns.exec(mainHackingScript, serverName, 1, targetServer);
         }
-        await ns.sleep(1000 * sleepSeconds);
+        await ns.sleep(1);
     }
 }

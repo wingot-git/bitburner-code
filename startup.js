@@ -1,4 +1,4 @@
-const requiredProgram = ["BruteSSH.exe","FTPCrack.exe","relaySMTP.exe","HTTPWorm.exe","SQLInject.exe"];
+const requiredProgram = ["startup.js","BruteSSH.exe","FTPCrack.exe","relaySMTP.exe","HTTPWorm.exe","SQLInject.exe"];
 const pServerRamForLevel = [64,1024,4096,16384,65536,262144];
 const oneMillion = 1000000;
 
@@ -51,7 +51,7 @@ async function levelUp(ns, level) {
   ns.print (getTimeStamp()," Waiting for level up to ",level);
   let waitForLevelUp = true;
   while (waitForLevelUp) {
-    let servers = getServersOfStrength(ns, 1);
+    let servers = getServersOfStrength(ns, level);
     let serversLength = servers.size;
 
     let hackableServers = 0;
@@ -69,13 +69,9 @@ async function levelUp(ns, level) {
         ns.print("$",ns.formatNumber(requiredMoneyForLevel[level])," - enough finances available for server purchases. Continuing to cracking program check.");
         if (ns.fileExists(requiredProgram[level])) {
           ns.print(requiredProgram[level]," exists. Setting up level ",level);
-          if (level == 0) {
-            ns.run("util/purchaseServers.js",1,pServerRamForLevel[0],25);
-            await ns.sleep(1000);
-          } else {
-            ns.run("util/upgradeServers.js",1,pServerRamForLevel[level], 25);
-          }
+          ns.run("util/upgradeServers.js",1,pServerRamForLevel[level], 25);
           await ns.sleep(1000);
+          
           ns.run("util/setupHWGWOnAllServersOfLevel.js",1,level); 
           return;
           
@@ -100,6 +96,8 @@ export async function main(ns) {
   ns.disableLog("run");
   ns.disableLog("sleep");
 
+  ns.run("util/purchaseServers.js",1,8,25);
+
   if (ns.getServerMoneyAvailable("home") < 100000000) {
     ns.print(getTimeStamp()," Starting with less than $100m. Allocating 2 minutes to running nestEgg.");
 
@@ -116,9 +114,9 @@ export async function main(ns) {
   }
 
   ns.run("util/crackAll.js");
+  ns.run("util/resetThreadController.js");
   ns.run("Controller/ThreadController.js");
   ns.tail("Controller/ThreadController.js");
-  ns.run("Controller/resetThreadController.js");
 
   let level = 1;
   ns.print(getTimeStamp()," Awaiting level up to ",level);

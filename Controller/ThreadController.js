@@ -87,7 +87,7 @@ class thread {
 }
 
 /** @param {NS} ns */
-function addServer(ns, hostname) {
+async function addServer(ns, hostname) {
     for (const server of servers) {
         // console.log("Server known to ThreadContoller: ", server.getHostname());
         if (hostname == server.getHostname()) {
@@ -106,6 +106,7 @@ function addServer(ns, hostname) {
     }
 
     ns.print("Server " + hostname + " added to available servers.");
+    await ns.sleep(100);
 }
 
 /** @param {NS} ns */
@@ -213,7 +214,7 @@ function releaseMemory (ns, requestID) {
 }
 
 /** @param {NS} ns */
-function invalidPortData (ns, data) {
+function invalidPortData (data) {
     if (data == "NULL PORT DATA") { return true; }
     else { return false; }
 }
@@ -232,7 +233,7 @@ export async function main(ns) {
             let portData = readRequestData(ns);
 
             if (portData == "add") {
-                addServer(ns, readRequestData(ns));
+                await addServer(ns, readRequestData(ns));
             }
             else if (portData == "upgrade") {
                 upgradeServer(ns, readRequestData(ns));
@@ -245,7 +246,7 @@ export async function main(ns) {
                 if(invalidPortData(threads)) { continue; }
 
                 /** @type {any[]} */
-                ns.print("Received request to run ", script," with ",threads," threads. Colleting args.");
+                ns.print("Received request to run ", script," with ",threads," threads. Collecting args.");
                 let args = readRequestData(ns);
                 if(invalidPortData(args)) { continue; }
 
@@ -286,6 +287,11 @@ export async function main(ns) {
                 }
 
                 threads.clear();
+            }
+            else if (portData == "analyzeServers") {
+                for (const server of servers) {
+                    ns.print("Server ",server.getHostname()," has ",ns.formatNumber(server.getRamAvailable())," available of ",ns.formatNumber(server.getMaxRam()));
+                }
             }
         }
 

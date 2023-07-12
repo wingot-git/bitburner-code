@@ -1,4 +1,5 @@
 const hackingScript = "util/oldHack.js";
+const targetServer = "n00dles";
 
 /** @param {NS} ns */
 function setupHackScript(ns, server, targetServer) {
@@ -22,7 +23,6 @@ function setupHackScript(ns, server, targetServer) {
 export async function main(ns) {
     ns.print("Initiating script");
     let server = "home";
-    let targetServer = "n00dles";
     ns.print("Commencing startup hack");
     setupHackScript(ns, server, targetServer);
     ns.print("Exiting script");
