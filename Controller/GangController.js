@@ -22,6 +22,7 @@ export async function main(ns) {
     ns.disableLog("ALL");
     while (true) {
         if (ns.gang.inGang() == false) {
+            ns.print("Not in gang. Attempting creation with Slum Snakes.");
             if (ns.gang.createGang("Slum Snakes") == false) {
                 ns.print("Not in a gang. Failed to create. Sleeping 1 minute.");
                 await ns.sleep(60000);
@@ -32,11 +33,12 @@ export async function main(ns) {
             ns.print("Recruited ",gangNames[numGangMembers]);
             ns.gang.recruitMember(gangNames[numGangMembers++]);
         }
+        console.clear();
         for (const member of ns.gang.getMemberNames()) {
             let memberInfo = ns.gang.getMemberInformation(member);
             let ascensionResult = ns.gang.getAscensionResult(member);
             if (ascensionResult != undefined) {
-                if (ascensionResult.str > memberInfo.str_asc_mult * 1.3) {
+                if (ascensionResult.str > 1.3) {
                     ns.gang.ascendMember(member);
                 }
             }
