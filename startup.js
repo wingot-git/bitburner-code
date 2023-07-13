@@ -47,6 +47,26 @@ function cleanupFiles(ns) {
 }
 
 /** @param {NS} ns */
+function isSourceFileAvailable (ns, SFnum) {
+  try {
+    for (const SF of ns.singularity.getOwnedSourceFiles()) {
+      if (SF.n == SFnum) { return true; }
+    }
+    return false;
+  } catch {
+    // singularity doesn't exist, time to brute force
+    if (SFnum == 2) {
+      try {
+        ns.gang.getGangInformation("Slum Snakes");
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+}
+
+/** @param {NS} ns */
 async function levelUp(ns, level) {
   ns.print (getTimeStamp()," Waiting for level up to ",level);
   let waitForLevelUp = true;
@@ -96,6 +116,11 @@ export async function main(ns) {
   ns.disableLog("run");
   ns.disableLog("sleep");
 
+  if (isSourceFileAvailable(ns, 2)) {
+    ns.run("Controller/GangController.js");
+    ns.tail("Controller/GangController.js");
+  }
+
   ns.run("util/purchaseServers.js",1,8,25);
 
   if (ns.getServerMoneyAvailable("home") < 100000000) {
@@ -111,6 +136,10 @@ export async function main(ns) {
       await ns.sleep(1000 * 60 * 2);
     }
     ns.killall(ns.getHostname(),true);
+    if (isSourceFileAvailable(ns, 2)) {
+      ns.run("Controller/GangController.js");
+      ns.tail("Controller/GangController.js");
+    } 
   }
 
   ns.run("util/crackAll.js");

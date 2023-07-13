@@ -89,7 +89,7 @@ function calculateGrowThreads (ns, target) {
         currentRatioMissing = 1-(1/maxMoney);
     }
     let growthMultiplier = 1/(1-currentRatioMissing);
-    console.log(currentRatioMissing," missing. ",availableMoney," currently available of max: ",maxMoney,". ",growthMultiplier," is growthMulti, with required threads: not yet known.");
+    // console.log(currentRatioMissing," missing. ",availableMoney," currently available of max: ",maxMoney,". ",growthMultiplier," is growthMulti, with required threads: not yet known.");
     let requiredThreads = Math.ceil(ns.growthAnalyze(target, growthMultiplier));
     return requiredThreads;
 }
