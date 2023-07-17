@@ -4,56 +4,126 @@
 // 1: target
 //
 
+const thisGang = "Slum Snakes";
 const gangNames = ["Anthony","Bob","Clarice","David","Elliott","Fidelia","Gary","Harriett","Isaac","Jesus","Katrina","Lewis"];
 
 /** @param {NS} ns */
-function functionName (ns) {
-    
+function considerClash(ns) {
+    let otherGangs = ns.gang.getOtherGangInformation();
+    let gangKeys = Object.keys(otherGangs);
+    let numGangs = gangKeys.length;
+    let startClash = true;
+    let maxPower = 0;
+    for (const gangName of gangKeys) {
+        if (gangName == ns.gang.getGangInformation().faction) { continue; }
+        if (otherGangs[gangName].power > maxPower) { maxPower = otherGangs[gangName].power * 1.1; }
+        if (otherGangs[gangName].territory > 0 && ns.gang.getChanceToWinClash(gangName) < .55) {
+            startClash = false;
+        }
+    }
+    if (startClash) {
+        ns.print("Clash active.");
+        ns.gang.setTerritoryWarfare(startClash);
+    } else {
+        ns.print("Clash inactive.");
+    }
+
+    return maxPower;
+}
+
+/** @param {NS} ns */
+function giveMembersTasks(ns, powerTarget) {
+    for (const member of ns.gang.getMemberNames()) {
+        let memberInfo = ns.gang.getMemberInformation(member);
+        let ascensionResult = ns.gang.getAscensionResult(member);
+        if (ascensionResult != undefined) {
+            if (ascensionResult.str > 1.3) {
+                ns.print("Ascending ", member);
+                ns.gang.ascendMember(member);
+            }
+        }
+        if (memberInfo.str < 600) {
+            ns.print("Setting ", member, " to Train Combat because Strength < 600.");
+            ns.gang.setMemberTask(member, "Train Combat");
+        }
+        else {
+            if (ns.gang.getGangInformation().length < 12 || ns.gang.getGangInformation().wantedPenalty < 0.9900) {
+                ns.gang.setMemberTask(member, "Terrorism");
+            }
+            else {
+                ns.gang.setMemberTask(member, "Human Trafficking");
+                if (ns.gang.getGangInformation().territory < 100) {
+                    let thisGangPower = ns.gang.getGangInformation().power;
+                    if (thisGangPower > powerTarget) {
+                        ns.print(member," assigned to Human Trafficking because power ",thisGangPower," > target Power ",powerTarget);
+                        ns.gang.setMemberTask(member, "Human Trafficking");
+                    } else {
+                        ns.print(member," assigned to Territory Warfare as power ",thisGangPower," < target Power ",powerTarget);
+                        ns.gang.setMemberTask(member, "Territory Warfare");
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** @param {NS} ns */
+function recruitAsAble(ns, numCurrentGangMembers) {
+    if (ns.gang.canRecruitMember()) {
+        if (ns.gang.getGangInformation().length == numCurrentGangMembers) {
+            ns.print("Recruited ", gangNames[numCurrentGangMembers]);
+            ns.gang.recruitMember(gangNames[numCurrentGangMembers++]);
+        } else {
+            let gangMembers = ns.gang.getMemberNames();
+            for (let i = 0; i < numCurrentGangMembers; i++) {
+                if (gangMembers.includes(gangNames[i])) {
+                    ns.print(gangNames[i], " appears dead. Re-recruited ", gangNames[i]);
+                    ns.gang.recruitMember(gangNames[i]);
+                }
+            }
+        }
+    }
+    return numCurrentGangMembers;
+}
+
+/** @param {NS} ns */
+async function createGang (ns) {
+    let notInGang = true;
+    while (notInGang) {
+        if (ns.gang.inGang()) {
+            notInGang = false;
+            continue;
+        } else {
+            ns.print("Not in gang. Attempting creation with ",thisGang,".");
+            if (ns.gang.createGang(thisGang) == false) {
+                ns.print("Failed to create. Sleeping 10 minutes.");
+                await ns.sleep(10 * 60 * 1000);
+                continue;    
+            } else {
+                notInGang = false;
+            }
+        }
+    }
 }
 
 /** @param {NS} ns */
 export async function main(ns) {
-    let numGangMembers = 0;
+    let numCurrentGangMembers = 0;
+    let powerTarget = 10000;
     if (ns.gang.inGang()) {
         for (const member of ns.gang.getMemberNames()) {
-            numGangMembers++;
+            numCurrentGangMembers++;
         }
     }
     ns.disableLog("ALL");
+    await createGang(ns);
+
     while (true) {
-        if (ns.gang.inGang() == false) {
-            ns.print("Not in gang. Attempting creation with Slum Snakes.");
-            if (ns.gang.createGang("Slum Snakes") == false) {
-                ns.print("Not in a gang. Failed to create. Sleeping 1 minute.");
-                await ns.sleep(60000);
-                continue;    
-            }
-        }
-        if (ns.gang.canRecruitMember()) {
-            ns.print("Recruited ",gangNames[numGangMembers]);
-            ns.gang.recruitMember(gangNames[numGangMembers++]);
-        }
+        numCurrentGangMembers = recruitAsAble(ns, numCurrentGangMembers);
+
         console.clear();
-        for (const member of ns.gang.getMemberNames()) {
-            let memberInfo = ns.gang.getMemberInformation(member);
-            let ascensionResult = ns.gang.getAscensionResult(member);
-            if (ascensionResult != undefined) {
-                if (ascensionResult.str > 1.3) {
-                    ns.gang.ascendMember(member);
-                }
-            }
-            if (memberInfo.str < 600) {
-                ns.gang.setMemberTask(member, "Train Combat");
-            }
-            else {
-                if (numGangMembers < 12 || ns.gang.getGangInformation().wantedPenalty < 0.9990) {
-                    ns.gang.setMemberTask(member, "Terrorism");
-                }
-                else {
-                    ns.gang.setMemberTask(member, "Human Trafficking");
-                }
-            }
-        }
+        powerTarget = considerClash(ns);
+        giveMembersTasks(ns, powerTarget);
 
         ns.print("Sleeping 1 minute.");
         await ns.sleep(60000);

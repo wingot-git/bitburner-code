@@ -123,7 +123,7 @@ export async function main(ns) {
 
   ns.run("util/purchaseServers.js",1,8,25);
 
-  if (ns.getServerMoneyAvailable("home") < 100000000) {
+  if (ns.getServerMoneyAvailable("home") < (100 * oneMillion)) {
     ns.print(getTimeStamp()," Starting with less than $100m. Allocating 2 minutes to running nestEgg.");
 
     ns.run("util/crackAll.js",1,0);
@@ -131,11 +131,12 @@ export async function main(ns) {
     ns.run("util/generateNestEgg.js");
     await ns.sleep(1000 * 60 * 2);
 
-    while (ns.getServerMoneyAvailable("home") < 100000000) {
+    while (ns.getServerMoneyAvailable("home") < (100 * oneMillion)) {
       ns.print(getTimeStamp()," Available money remains below 100m. Continuing nest egg generation further 2 minutes.");
       await ns.sleep(1000 * 60 * 2);
     }
     ns.killall(ns.getHostname(),true);
+    
     if (isSourceFileAvailable(ns, 2)) {
       ns.run("Controller/GangController.js");
       ns.tail("Controller/GangController.js");
