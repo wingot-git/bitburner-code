@@ -33,11 +33,6 @@ function considerClash(ns) {
 }
 
 /** @param {NS} ns */
-function giveMembersTasks(ns, powerTarget) {
-
-}
-
-/** @param {NS} ns */
 function ascendMember(ns, member) {
     let ascensionResult = ns.gang.getAscensionResult(member);
     if (ascensionResult != undefined) {
