@@ -4,6 +4,7 @@
 // 1: target
 //
 
+import { getTimeStamp } from "lib/functionLibrary";
 const thisGang = "Slum Snakes";
 const gangNames = ["Anthony","Bob","Clarice","David","Elliott","Fidelia","Gary","Harriett","Isaac","Jesus","Katrina","Lewis"];
 
@@ -33,34 +34,40 @@ function considerClash(ns) {
 
 /** @param {NS} ns */
 function giveMembersTasks(ns, powerTarget) {
-    for (const member of ns.gang.getMemberNames()) {
-        let memberInfo = ns.gang.getMemberInformation(member);
-        let ascensionResult = ns.gang.getAscensionResult(member);
-        if (ascensionResult != undefined) {
-            if (ascensionResult.str > 1.3) {
-                ns.print("Ascending ", member);
-                ns.gang.ascendMember(member);
-            }
+
+}
+
+/** @param {NS} ns */
+function ascendMember(ns, member) {
+    let ascensionResult = ns.gang.getAscensionResult(member);
+    if (ascensionResult != undefined) {
+        let respectLostUnderHalfTotal = (ns.gang.getGangInformation(thisGang).respect * 0.5) > ns.gang.getMemberInformation(member).earnedRespect;
+        if (ascensionResult.str > 1.3 && respectLostUnderHalfTotal) {
+            ns.print("Ascending ", member);
+            ns.gang.ascendMember(member);
         }
-        if (memberInfo.str < 600) {
-            ns.print("Setting ", member, " to Train Combat because Strength < 600.");
-            ns.gang.setMemberTask(member, "Train Combat");
+    }
+}
+
+function giveMemberTask(ns, member, powerTarget) {
+    if (ns.gang.getMemberInformation(member).str < 600) {
+        ns.print("Setting ", member, " to Train Combat because Strength < 600.");
+        ns.gang.setMemberTask(member, "Train Combat");
+    }
+    else {
+        if (ns.gang.getGangInformation().length < 12 || ns.gang.getGangInformation().wantedPenalty < 0.9900) {
+            ns.gang.setMemberTask(member, "Terrorism");
         }
         else {
-            if (ns.gang.getGangInformation().length < 12 || ns.gang.getGangInformation().wantedPenalty < 0.9900) {
-                ns.gang.setMemberTask(member, "Terrorism");
-            }
-            else {
-                ns.gang.setMemberTask(member, "Human Trafficking");
-                if (ns.gang.getGangInformation().territory < 100) {
-                    let thisGangPower = ns.gang.getGangInformation().power;
-                    if (thisGangPower > powerTarget) {
-                        ns.print(member," assigned to Human Trafficking because power ",thisGangPower," > target Power ",powerTarget);
-                        ns.gang.setMemberTask(member, "Human Trafficking");
-                    } else {
-                        ns.print(member," assigned to Territory Warfare as power ",thisGangPower," < target Power ",powerTarget);
-                        ns.gang.setMemberTask(member, "Territory Warfare");
-                    }
+            ns.gang.setMemberTask(member, "Human Trafficking");
+            if (ns.gang.getGangInformation().territory < 100) {
+                let thisGangPower = ns.gang.getGangInformation().power;
+                if (thisGangPower > powerTarget) {
+                    ns.print(member, " assigned to Human Trafficking because power ", thisGangPower, " > target Power ", powerTarget);
+                    ns.gang.setMemberTask(member, "Human Trafficking");
+                } else {
+                    ns.print(member, " assigned to Territory Warfare as power ", thisGangPower, " < target Power ", powerTarget);
+                    ns.gang.setMemberTask(member, "Territory Warfare");
                 }
             }
         }
@@ -123,9 +130,13 @@ export async function main(ns) {
 
         console.clear();
         powerTarget = considerClash(ns);
-        giveMembersTasks(ns, powerTarget);
 
-        ns.print("Sleeping 1 minute.");
+        for (const member of ns.gang.getMemberNames()) {
+            ascendMember(ns, member);
+            giveMemberTask(ns, member, powerTarget);
+        }
+
+        ns.print(getTimeStamp()," Sleeping 1 minute.");
         await ns.sleep(60000);
     }
 }
