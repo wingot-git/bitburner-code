@@ -1,16 +1,11 @@
+import { getTimeStamp } from "lib/functionLibrary";
+
 const requiredProgram = ["startup.js","BruteSSH.exe","FTPCrack.exe","relaySMTP.exe","HTTPWorm.exe","SQLInject.exe"];
 const pServerRamForLevel = [64,1024,4096,16384,65536,262144];
 const oneMillion = 1000000;
 
 // requiredMoneyForLevel = 100m, 1b, 10b, 25b, 100b, 500b
 const requiredMoneyForLevel = [100 * oneMillion, 1 * 1000 * oneMillion, 10 * 1000 * oneMillion, 25 * 1000 * oneMillion, 100 * 1000 * oneMillion, 500 * 1000 * oneMillion];
-
-/** @param {NS} ns */
-function getTimeStamp (ns) {
-  var today = new Date();
-  var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-  return time;
-}
 
 function getAllServers(ns) {
   let servers = new Set(ns.scan());
