@@ -15,14 +15,23 @@ function considerClash(ns) {
     let numGangs = gangKeys.length;
     let startClash = true;
     let maxPower = 0;
+    let livingGangs = 0
     for (const gangName of gangKeys) {
         if (gangName == ns.gang.getGangInformation().faction) { continue; }
-        if (otherGangs[gangName].power > maxPower) { maxPower = otherGangs[gangName].power * 1.1; }
-        if (otherGangs[gangName].territory > 0 && ns.gang.getChanceToWinClash(gangName) < .55) {
-            startClash = false;
+        if (otherGangs[gangName].power > maxPower) { maxPower = otherGangs[gangName].power * 1.5; }
+        if (otherGangs[gangName].territory > 0) {
+            livingGangs++;
+            if (ns.gang.getChanceToWinClash(gangName) < .55) {
+                startClash = false;
+            }
         }
     }
-    if (startClash) {
+    if (livingGangs == 0) {
+        ns.print("No living gangs. No need to clash.");
+        ns.gang.setTerritoryWarfare(false);
+        maxPower = 0;
+    }
+    else if (startClash) {
         ns.print("Clash active.");
         ns.gang.setTerritoryWarfare(startClash);
     } else {
