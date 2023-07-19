@@ -53,14 +53,23 @@ function ascendMember(ns, member) {
     }
 }
 
+/** @param {NS} ns */
 function giveMemberTask(ns, member, powerTarget) {
     if (ns.gang.getMemberInformation(member).str < 600) {
         ns.print("Setting ", member, " to Train Combat because Strength < 600.");
         ns.gang.setMemberTask(member, "Train Combat");
     }
     else {
-        if (ns.gang.getGangInformation().length < 12 || ns.gang.getGangInformation().wantedPenalty < 0.9900) {
+        // console.log("Current gang length: ",ns.gang.getMemberNames().length);
+
+        if (ns.gang.getMemberNames().length < 12) {
+            ns.print(member, " assigned to Terrorism because more members to recruit.");
             ns.gang.setMemberTask(member, "Terrorism");
+        }
+        else if (ns.gang.getGangInformation().wantedPenalty < 0.9900) {
+            ns.print(member, " assigned to Terrorism because wanted level too high.");
+            ns.gang.setMemberTask(member, "Terrorism");
+
         }
         else {
             ns.gang.setMemberTask(member, "Human Trafficking");
@@ -81,7 +90,7 @@ function giveMemberTask(ns, member, powerTarget) {
 /** @param {NS} ns */
 function recruitAsAble(ns, numCurrentGangMembers) {
     if (ns.gang.canRecruitMember()) {
-        if (ns.gang.getGangInformation().length == numCurrentGangMembers) {
+        if (ns.gang.getGangInformation().length == numCurrentGangMembers || ns.gang.getGangInformation().length == undefined) {
             ns.print("Recruited ", gangNames[numCurrentGangMembers]);
             ns.gang.recruitMember(gangNames[numCurrentGangMembers++]);
         } else {
@@ -132,7 +141,7 @@ export async function main(ns) {
     while (true) {
         numCurrentGangMembers = recruitAsAble(ns, numCurrentGangMembers);
 
-        console.clear();
+        // console.clear();
         powerTarget = considerClash(ns);
 
         for (const member of ns.gang.getMemberNames()) {
