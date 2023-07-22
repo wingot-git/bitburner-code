@@ -90,13 +90,14 @@ function giveMemberTask(ns, member, powerTarget) {
 /** @param {NS} ns */
 function recruitAsAble(ns, numCurrentGangMembers) {
     if (ns.gang.canRecruitMember()) {
-        if (ns.gang.getGangInformation().length == numCurrentGangMembers || ns.gang.getGangInformation().length == undefined) {
+        // console.log("numCurrentGangMembers = ",numCurrentGangMembers,", actual gang members length =",ns.gang.getMemberNames().length);
+        if (ns.gang.getMemberNames().length == numCurrentGangMembers) {
             ns.print("Recruited ", gangNames[numCurrentGangMembers]);
             ns.gang.recruitMember(gangNames[numCurrentGangMembers++]);
         } else {
             let gangMembers = ns.gang.getMemberNames();
             for (let i = 0; i < numCurrentGangMembers; i++) {
-                if (gangMembers.includes(gangNames[i])) {
+                if (!gangMembers.includes(gangNames[i])) {
                     ns.print(gangNames[i], " appears dead. Re-recruited ", gangNames[i]);
                     ns.gang.recruitMember(gangNames[i]);
                 }

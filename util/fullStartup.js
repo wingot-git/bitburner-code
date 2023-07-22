@@ -71,7 +71,7 @@ async function levelUp(ns, level) {
       if (availableFunds > requiredMoneyForLevel[level]) {
         ns.print("$",ns.formatNumber(requiredMoneyForLevel[level])," - enough finances available for server purchases. Continuing to cracking program check.");
         if (isSourceFileAvailable(ns, 4)) {
-            ns.singularity.purchaseProgram(requiredMoneyForLevel[level]);
+            ns.singularity.purchaseProgram(requiredProgram[level]);
         }
         if (ns.fileExists(requiredProgram[level])) {
           ns.print(requiredProgram[level]," exists. Setting up level ",level);
@@ -126,14 +126,15 @@ export async function main(ns) {
     ns.tail("Controller/GangController.js");
   }
 
-  ns.run("util/purchaseServers.js",1,8,25);
-
   if (ns.getServerMoneyAvailable("home") < (100 * oneMillion)) {
     await generateNestEgg(ns); 
   }
   
   ns.run("util/crackAll.js");
   ns.run("util/resetThreadController.js");
+  await ns.sleep(1);
+  ns.run("util/purchaseServers.js",1,8,25);
+  await ns.sleep(100);
   ns.run("Controller/ThreadController.js");
   ns.tail("Controller/ThreadController.js");
 
@@ -151,4 +152,5 @@ export async function main(ns) {
 
   ns.print("Finished startup. Waiting 10s to allow to catch tail.");
   await ns.sleep(10000);
+  ns.closeTail(ns.getRunningScript());
 }
