@@ -75,7 +75,8 @@ async function levelUp(ns, level) {
         }
         if (ns.fileExists(requiredProgram[level])) {
           ns.print(requiredProgram[level]," exists. Setting up level ",level);
-          ns.run("util/upgradeServers.js",1,pServerRamForLevel[level], 25);
+          ns.run("util/crackAll.js",1,level);
+          ns.run("util/upgradeServers.js",1,pServerRamForLevel[level], Math.floor(ns.getBitNodeMultipliers().PurchasedServerLimit * 25));
           await ns.sleep(1000);
           
           ns.run("util/setupHWGWOnAllServersOfLevel.js",1,level); 
@@ -98,7 +99,7 @@ async function levelUp(ns, level) {
 async function generateNestEgg(ns) {
     ns.print(getTimeStamp(), " Starting with less than $100m. Allocating 2 minutes to running nestEgg.");
 
-    ns.run("util/crackAll.js", 1, 0);
+    ns.run("util/crackServer.js",1,"n00dles");
     await ns.sleep(1000);
     ns.run("util/generateNestEgg.js");
     await ns.sleep(1000 * 60 * 2);
@@ -130,10 +131,9 @@ export async function main(ns) {
     await generateNestEgg(ns); 
   }
   
-  ns.run("util/crackAll.js");
   ns.run("util/resetThreadController.js");
   await ns.sleep(1);
-  ns.run("util/purchaseServers.js",1,8,25);
+  ns.run("util/purchaseServers.js",1,8,Math.floor(ns.getBitNodeMultipliers().PurchasedServerLimit * 25));
   await ns.sleep(100);
   ns.run("Controller/ThreadController.js");
   ns.tail("Controller/ThreadController.js");
@@ -152,5 +152,5 @@ export async function main(ns) {
 
   ns.print("Finished startup. Waiting 10s to allow to catch tail.");
   await ns.sleep(10000);
-  ns.closeTail(ns.getRunningScript());
+  ns.closeTail(ns.getRunningScript().pid);
 }

@@ -176,9 +176,6 @@ async function runHWGWBatch (ns, target, minSec, maxMoney) {
 /** @param {NS} ns */
 async function prepareServer (ns, target, minSec, maxMoney) {
     // console.log("Preparing server ", target);
-    let requestPort = ns.getPortHandle(1);
-    let responsePort = ns.getPortHandle(2);
-    
     let currentMoney = ns.getServerMoneyAvailable(target);
     while (currentMoney < maxMoney) {
         let currentSec = ns.getServerSecurityLevel(target);

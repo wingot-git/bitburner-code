@@ -37,15 +37,19 @@ export async function main(ns) {
         let currentMoney = ns.getServerMoneyAvailable("home");      
         let serverName = "pserver-" + (firstServerNumber+purchasedServers++);
 
-        while (currentMoney < purchasePrice)
-        {
-            ns.print("Insufficent money for purchase of ",serverName,". Require: $",ns.formatNumber(purchasePrice),", Available: $",ns.formatNumber(currentMoney));
-            await ns.sleep(1000 * 60);
-            currentMoney = ns.getServerMoneyAvailable("home");
+        if (ns.serverExists(serverName)) {
+            ns.print ("Server already exists. Notifying ThreadController only.");
+        } else {
+            while (currentMoney < purchasePrice)
+            {
+                ns.print("Insufficent money for purchase of ",serverName,". Require: $",ns.formatNumber(purchasePrice),", Available: $",ns.formatNumber(currentMoney));
+                await ns.sleep(1000 * 60);
+                currentMoney = ns.getServerMoneyAvailable("home");
+            }
+    
+            ns.print("Purchasing ",serverName," for $",ns.formatNumber(purchasePrice));
+            ns.purchaseServer(serverName, serverRam);    
         }
-
-        ns.print("Purchasing ",serverName," for $",ns.formatNumber(purchasePrice));
-        ns.purchaseServer(serverName, serverRam);
 
         // Notify ThreadController of existence
         let requestPort = ns.getPortHandle(1);
