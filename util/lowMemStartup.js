@@ -69,7 +69,7 @@ export async function main(ns) {
   if (ns.getServerMoneyAvailable("home") < (150 * oneMillion) || ns.getServerMaxRam("home") < 2*ns.getScriptRam(fullStartup)) {
     ns.print(getTimeStamp()," Starting with less than $150m. Allocating 2 minutes to running nestEgg.");
 
-    ns.run("util/crackAll.js",1,0);
+    ns.run("util/crackServer.js",1,"n00dles");
     await ns.sleep(1000);
     ns.run("util/generateNestEgg.js");
     await ns.sleep(1000 * 60 * 2);
