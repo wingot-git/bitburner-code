@@ -76,13 +76,29 @@ function giveMemberTask(ns, member, powerTarget) {
             if (ns.gang.getGangInformation().territory < 100) {
                 let thisGangPower = ns.gang.getGangInformation().power;
                 if (thisGangPower > powerTarget) {
-                    ns.print(member, " assigned to Human Trafficking because power ", thisGangPower, " > target Power ", powerTarget);
-                    ns.gang.setMemberTask(member, "Human Trafficking");
+                    if (Math.random() < 0.5) {
+                        ns.print(member, " randomly assigned to Human Trafficking.");
+                        ns.gang.setMemberTask(member, "Human Trafficking");
+                    } else {
+                        ns.print(member, " randomly assigned to Terrorism to skill up.");
+                        ns.gang.setMemberTask(member, "Terrorism");
+                    }
                 } else {
                     ns.print(member, " assigned to Territory Warfare as power ", thisGangPower, " < target Power ", powerTarget);
                     ns.gang.setMemberTask(member, "Territory Warfare");
                 }
             }
+        }
+    }
+}
+
+/** @param {NS} ns */
+function purchaseGear (ns, member) {
+    let equipmentList = ns.gang.getEquipmentNames();
+    for (const equipment of equipmentList) {
+        if (ns.gang.getEquipmentCost(equipment) < ns.getServerMoneyAvailable("home") * 0.01) {
+            ns.print("Purchasing ",equipment," for ",member," because costs < 1% of available money.");
+            ns.gang.purchaseEquipment(member, equipment);
         }
     }
 }
@@ -147,6 +163,7 @@ export async function main(ns) {
 
         for (const member of ns.gang.getMemberNames()) {
             ascendMember(ns, member);
+            purchaseGear(ns, member);
             giveMemberTask(ns, member, powerTarget);
         }
 
