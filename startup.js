@@ -6,11 +6,14 @@ export async function main(ns) {
   // If startup already running, don't start another
   if (ns.scriptRunning(fullMem,"home") || ns.scriptRunning(lowMem,"home")) { return; }
   // otherwise, fullMem if reasonable, lowMem if not
-  else if (ns.getServerMaxRam("home") > 2*ns.getScriptRam(fullMem)) {
-    ns.run(fullMem);
-    ns.tail(fullMem);
-  } else {
-    ns.run(lowMem);
-    ns.tail(lowMem);
+  else {
+    ns.run("util/resetThreadController.js");
+    if (ns.getServerMaxRam("home") > 2*ns.getScriptRam(fullMem)) {
+      ns.run(fullMem);
+      ns.tail(fullMem);
+    } else {
+      ns.run(lowMem);
+      ns.tail(lowMem);
+    }
   }
 }

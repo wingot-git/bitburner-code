@@ -1,3 +1,9 @@
+// Crack all servers up to specified level
+// 
+// Args:
+// 1: max level to crack
+//
+
 // Global Variables
 let NS = 0; // will be used to access NetScript globally
 let skipToLevel = 0;

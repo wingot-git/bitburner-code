@@ -34,16 +34,12 @@ function getServersOfStrength(ns, strength) {
 
 /** @param {NS} ns */
 function isSourceFileAvailable (ns, SFnum) {
-    // lowMem, can't afford singularity, time to brute force
-    switch(SFnum) {
-    case 2:
-      try {
-        ns.gang.getGangInformation("Slum Snakes");
-        return true;
-      } catch {
-        return false;
-      }
-    }
+  let sf = ns.getResetInfo().ownedSF;
+
+  if (sf.get(SFnum) > 0) {
+     return true;
+  }
+  return false;
 }
 
 /** @param {NS} ns */
@@ -91,6 +87,7 @@ export async function main(ns) {
           ns.run("Controller/GangController.js");
           ns.tail("Controller/GangController.js");
         }
+        ns.run("util/generateNestEgg.js");
         continue;
       } else {
         let currentMoney = ns.getServerMoneyAvailable("home");

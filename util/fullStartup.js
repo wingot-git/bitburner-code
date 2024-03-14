@@ -1,3 +1,8 @@
+// Cracks all servers and sets up hacking on them.
+// 
+// Args: none.
+//
+
 import { getTimeStamp } from "lib/functionLibrary";
 
 const requiredProgram = ["startup.js","BruteSSH.exe","FTPCrack.exe","relaySMTP.exe","HTTPWorm.exe","SQLInject.exe"];
@@ -43,24 +48,46 @@ function cleanupFiles(ns) {
 
 /** @param {NS} ns */
 function isSourceFileAvailable (ns, SFnum) {
-  for (const SF of ns.singularity.getOwnedSourceFiles()) {
-    if (SF.n == SFnum) { return true; }
+  let sf = ns.getResetInfo().ownedSF;
+
+  if (sf.get(SFnum) > 0) {
+     return true;
   }
   return false;
+}
+
+// Hack n00dles for specified number of minutes
+/** @param {NS} ns */
+async function hackN00dles (ns, minutes) {
+  ns.run("util/crackServer.js",1,"n00dles");
+  await ns.sleep(1000);
+  ns.run("util/generateNestEgg.js");
+  await ns.sleep(1000 * 60 * minutes);
+
+  // cleanup oldHack instance created by generateNestEgg.js
+  for (const process of ns.ps())
+  {
+      ns.tprint(process.filename," has PID ",process.pid);
+      if (process.filename == "util/oldHack.js") {
+          ns.kill(process.pid);
+      }
+  }
 }
 
 /** @param {NS} ns */
 async function levelUp(ns, level) {
   ns.print (getTimeStamp()," Waiting for level up to ",level);
   let waitForLevelUp = true;
-  while (waitForLevelUp) {
-    let servers = getServersOfStrength(ns, level);
-    let serversLength = servers.size;
+  let servers = getServersOfStrength(ns, level);
+  let serversLength = servers.size;
 
+  while (waitForLevelUp) {
     let hackableServers = 0;
+    let hackingLevel = ns.getHackingLevel();
+
     ns.print(getTimeStamp()," Checking hackability of servers of strength ",level);
     for (const server of servers) {
-      if (ns.getServerRequiredHackingLevel(server)) {
+      if (ns.getServerRequiredHackingLevel(server) <= hackingLevel) {
         hackableServers += 1;
       }
     }
@@ -89,30 +116,28 @@ async function levelUp(ns, level) {
       } else {
         ns.print("Inadequate finances for level ",level,". Current: $",ns.formatNumber(availableFunds),", Required: $",ns.formatNumber(requiredMoneyForLevel[level]));
       }
+      ns.print(getTimeStamp()," Not yet ready for level up. Sleeping for 1 minute.");
+      await ns.sleep(1000 * 60);
     }
-  
-    ns.print(getTimeStamp()," Not yet ready for level up. Sleeping for 1 minute.");
-    await ns.sleep(1000 * 60);  
+    else {
+      ns.print(getTimeStamp()," Too low hacking level ",hackingLevel,", only able to hack ",hackableServers," servers of ",serversLength," at level ",level);
+      if (level == 0) {
+        ns.print(getTimeStamp()," Unable to progress Level 0 detected. Running hack on n00dles to level up.");
+        await hackN00dles(ns, 1);
+      }
+      else {
+        ns.print(getTimeStamp()," Not yet ready for level up. Sleeping for 1 minute.");
+        await ns.sleep(1000 * 60);    
+      }
+    }
   }
 }
 
+/** @param {NS} ns */
 async function generateNestEgg(ns) {
-    ns.print(getTimeStamp(), " Starting with less than $100m. Allocating 2 minutes to running nestEgg.");
-
-    ns.run("util/crackServer.js",1,"n00dles");
-    await ns.sleep(1000);
-    ns.run("util/generateNestEgg.js");
-    await ns.sleep(1000 * 60 * 2);
-
     while (ns.getServerMoneyAvailable("home") < (100 * oneMillion)) {
-        ns.print(getTimeStamp(), " Available money remains below 100m. Continuing nest egg generation further 2 minutes.");
-        await ns.sleep(1000 * 60 * 2);
-    }
-    ns.killall(ns.getHostname(), true);
-
-    if (isSourceFileAvailable(ns, 2)) {
-        ns.run("Controller/GangController.js");
-        ns.tail("Controller/GangController.js");
+      ns.print(getTimeStamp(), " Available money below 100m. Generating nest egg for 2 minutes.");
+      await hackN00dles(ns, 2); // hack n00dles for 2 minutes
     }
 }
 
@@ -132,18 +157,16 @@ export async function main(ns) {
   }
   
   ns.run("util/resetThreadController.js");
-  await ns.sleep(1);
-  ns.run("util/purchaseServers.js",1,8,Math.floor(ns.getBitNodeMultipliers().PurchasedServerLimit * 25));
   await ns.sleep(100);
   ns.run("Controller/ThreadController.js");
   ns.tail("Controller/ThreadController.js");
+  ns.run("util/purchaseServers.js",1,8,Math.floor(ns.getBitNodeMultipliers().PurchasedServerLimit * 25));
+  await ns.sleep(10000); // wait 10 seconds to allow thread controller to clear purchased server requests
 
   if (isSourceFileAvailable(ns, 4)) {
     ns.singularity.purchaseTor();
   }
 
-  let level = 0;
-  ns.print(getTimeStamp()," Awaiting level up to ",level);
   for (let i = 0; i <= 5; i++) {
     await levelUp(ns, i);
   }
