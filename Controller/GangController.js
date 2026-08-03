@@ -10,7 +10,7 @@ const gangNames = ["Anthony","Bob","Clarice","David","Elliott","Fidelia","Gary",
 
 /** @param {NS} ns */
 function considerClash(ns) {
-    let otherGangs = ns.gang.getOtherGangInformation();
+    let otherGangs = ns.gang.getAllGangInformation();
     let gangKeys = Object.keys(otherGangs);
     let numGangs = gangKeys.length;
     let startClash = true;
@@ -94,9 +94,18 @@ function giveMemberTask(ns, member, powerTarget) {
 
 /** @param {NS} ns */
 function purchaseGear (ns, member) {
+    ns.print("Checking gear for ",member);
     let equipmentList = ns.gang.getEquipmentNames();
     for (const equipment of equipmentList) {
-        if (ns.gang.getEquipmentCost(equipment) < ns.getServerMoneyAvailable("home") * 0.01) {
+        let existingEquipment = ns.gang.getMemberInformation(member).upgrades + ns.gang.getMemberInformation(member).augmentations;
+        // ns.print("Checking ",equipment," for ",member);
+        // ns.print("Does member have equipment?: ", existingEquipment.includes(equipment));
+
+        if (existingEquipment.includes(equipment)) {
+            // ns.print("No need for ",equipment," for ",member," because already owned.");
+            continue;
+        }
+        else if (ns.gang.getEquipmentCost(equipment) < ns.getServerMoneyAvailable("home") * 0.01) {
             ns.print("Purchasing ",equipment," for ",member," because costs < 1% of available money.");
             ns.gang.purchaseEquipment(member, equipment);
         }

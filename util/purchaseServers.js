@@ -28,9 +28,12 @@ export async function main(ns) {
     if (firstServerNumber == undefined) { firstServerNumber = 0; }
     if (targetServer == undefined) { executeBrain = false; }
 
-    let purchasePrice = ns.getPurchasedServerCost(serverRam);
+    let purchasePrice = ns.cloud.getServerCost(serverRam);
+    if (numberOfServers > ns.cloud.getServerLimit()) {
+        numberOfServers = ns.cloud.getServerLimit();
+    }
 
-    ns.print("Cost for server of size " + serverRam + " is " + ns.formatNumber(purchasePrice));
+    ns.print("Cost for server of size " + serverRam + " is " + ns.format.number(purchasePrice));
 
     let purchasedServers = 0;
     while (purchasedServers < numberOfServers) {
@@ -42,13 +45,13 @@ export async function main(ns) {
         } else {
             while (currentMoney < purchasePrice)
             {
-                ns.print("Insufficent money for purchase of ",serverName,". Require: $",ns.formatNumber(purchasePrice),", Available: $",ns.formatNumber(currentMoney));
+                ns.print("Insufficent money for purchase of ",serverName,". Require: $",ns.format.number(purchasePrice),", Available: $",ns.format.number(currentMoney));
                 await ns.sleep(1000 * 60);
                 currentMoney = ns.getServerMoneyAvailable("home");
             }
     
-            ns.print("Purchasing ",serverName," for $",ns.formatNumber(purchasePrice));
-            ns.purchaseServer(serverName, serverRam);    
+            ns.print("Purchasing ",serverName," for $",ns.format.number(purchasePrice));
+            ns.cloud.purchaseServer(serverName, serverRam);    
         }
 
         // Notify ThreadController of existence

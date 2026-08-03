@@ -1,5 +1,6 @@
 const hackingScript = "util/oldHack.js";
-const targetServer = "n00dles";
+// const targetServer = "n00dles";
+// const targetServer = "foodnstuff";
 
 /** @param {NS} ns */
 function setupHackScript(ns, server, targetServer) {
@@ -16,15 +17,17 @@ function setupHackScript(ns, server, targetServer) {
 
     ns.print("Server: " + server + " has " + (maxRam-usedRam) + " GB RAM available, and can run " + maxInstances + " instances of ",hackingScript," without going over 90%.");
     ns.print("executing");
+    ns.scp(hackingScript, server);
     ns.exec(hackingScript, server, maxInstances, targetServer);
 }
 
 /** @param {NS} ns */
 export async function main(ns) {
+    let targetServer = ns.args[0];
     ns.print("Initiating script");
-    let server = "home";
-    ns.print("Commencing startup hack");
-    setupHackScript(ns, server, targetServer);
+    // let server = "home";
+    ns.print("Commencing startup hack on ", targetServer);
+    setupHackScript(ns, targetServer, targetServer);
     ns.print("Exiting script");
-    await ns.sleep(5000); // Wait 5 seconds before terminating in case of needing to tail.
+    await ns.sleep(15000); // Wait 5 seconds before terminating in case of needing to tail.
 }

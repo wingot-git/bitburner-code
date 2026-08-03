@@ -59,9 +59,10 @@ function isSourceFileAvailable (ns, SFnum) {
 // Hack n00dles for specified number of minutes
 /** @param {NS} ns */
 async function hackN00dles (ns, minutes) {
-  ns.run("util/crackServer.js",1,"n00dles");
+  ns.run("util/crackServer.js", 1, "n00dles");
   await ns.sleep(1000);
-  ns.run("util/generateNestEgg.js");
+  ns.run("util/generateNestEgg.js", 1, "n00dles");
+  ns.run("util/generateNestEgg.js", 1, "foodnstuff");
   await ns.sleep(1000 * 60 * minutes);
 
   // cleanup oldHack instance created by generateNestEgg.js
@@ -96,7 +97,7 @@ async function levelUp(ns, level) {
       ns.print("Sufficient hacking level exists for all servers of level ",level,". Continuing to finance check.");
       let availableFunds = ns.getServerMoneyAvailable("home");
       if (availableFunds > requiredMoneyForLevel[level]) {
-        ns.print("$",ns.formatNumber(requiredMoneyForLevel[level])," - enough finances available for server purchases. Continuing to cracking program check.");
+        ns.print("$",ns.format.number(requiredMoneyForLevel[level])," - enough finances available for server purchases. Continuing to cracking program check.");
         if (isSourceFileAvailable(ns, 4)) {
             ns.singularity.purchaseProgram(requiredProgram[level]);
         }
@@ -114,7 +115,7 @@ async function levelUp(ns, level) {
             ns.print(getTimeStamp()," All else checks out. Suggest purchasing ",requiredProgram[level]);
         }
       } else {
-        ns.print("Inadequate finances for level ",level,". Current: $",ns.formatNumber(availableFunds),", Required: $",ns.formatNumber(requiredMoneyForLevel[level]));
+        ns.print("Inadequate finances for level ",level,". Current: $",ns.format.number(availableFunds),", Required: $",ns.format.number(requiredMoneyForLevel[level]));
       }
       ns.print(getTimeStamp()," Not yet ready for level up. Sleeping for 1 minute.");
       await ns.sleep(1000 * 60);
@@ -149,7 +150,7 @@ export async function main(ns) {
 
   if (isSourceFileAvailable(ns, 2)) {
     ns.run("Controller/GangController.js");
-    ns.tail("Controller/GangController.js");
+    ns.ui.openTail("Controller/GangController.js");
   }
 
   if (ns.getServerMoneyAvailable("home") < (100 * oneMillion)) {
@@ -159,7 +160,7 @@ export async function main(ns) {
   ns.run("util/resetThreadController.js");
   await ns.sleep(100);
   ns.run("Controller/ThreadController.js");
-  ns.tail("Controller/ThreadController.js");
+  ns.ui.openTail("Controller/ThreadController.js");
   ns.run("util/purchaseServers.js",1,8,Math.floor(ns.getBitNodeMultipliers().PurchasedServerLimit * 25));
   await ns.sleep(10000); // wait 10 seconds to allow thread controller to clear purchased server requests
 
@@ -175,5 +176,5 @@ export async function main(ns) {
 
   ns.print("Finished startup. Waiting 10s to allow to catch tail.");
   await ns.sleep(10000);
-  ns.closeTail(ns.getRunningScript().pid);
+  // ns.closeTail(ns.getRunningScript().pid);
 }

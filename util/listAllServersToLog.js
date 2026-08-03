@@ -16,4 +16,5 @@ export async function main(ns) {
     for (const server of servers) {
         console.log(server);
     }
+    ns.ui.openTail();
 }
